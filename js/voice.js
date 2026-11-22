@@ -1,5 +1,5 @@
 // Fit mit Herz – Sprachansagen
-// Standard: echte Sprachaufnahmen der Trainerin „Kerstin“ (Ordner audio/, offline verfügbar).
+// Standard: echte Sprachaufnahmen der Trainerin „Jessica“ (ElevenLabs, Ordner audio/, offline verfügbar).
 // Alternativ: eine Vorlesestimme des Geräts (Web Speech API).
 // Eine Ansage besteht aus Bausteinen { id, text } – z. B. „Weiter geht's mit“ + „Marschieren auf der Stelle.“
 import * as store from './store.js';

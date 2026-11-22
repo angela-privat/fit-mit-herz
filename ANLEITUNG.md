@@ -73,5 +73,8 @@ Dann im Browser `http://localhost:4173` öffnen. (Nur auf diesem PC – das Hand
 - Figuren-Prüfseite: `http://localhost:4173/tools/figures.html`.
 - Nach jeder Änderung die Versionsnummer in `sw.js` erhöhen, damit Handys das Update laden.
 - Aufbau: `index.html`, `css/app.css`, `js/` (app, store, exercises, plans, figures, trainer, progress, charts, ui), `sw.js`, `manifest.webmanifest`, `icons/`.
-- Sprachaufnahmen der Trainerin: Texte stehen in `js/phrases.js` (plus Übungsnamen und Haltungstipps aus `js/exercises.js`). Nach Textänderungen neu erzeugen mit
-  `%USERPROFILE%\fmh-tts\venv\Scripts\python tools\tts\make_audio.py` (Einrichtung siehe Kopf der Datei). Stimme: „Kerstin“ (Piper, Lizenz CC0).
+- Sprachaufnahmen der Trainerin: Texte stehen in `js/phrases.js` (plus Übungsnamen und Haltungstipps aus `js/exercises.js`).
+  Stimme „Jessica“ von ElevenLabs (kostenloser Tarif: privat, nicht-kommerziell, ElevenLabs wird in der App genannt).
+  Nach Textänderungen neu erzeugen mit `python tools\tts\make_audio_elevenlabs.py` (Schlüssel in `%USERPROFILE%\fmh-tts\elevenlabs-key.txt`).
+  Nur geänderte Sätze werden neu aufgenommen; der Gratis-Tarif hat 10.000 Zeichen pro Monat (alle Ansagen zusammen ca. 7.800).
+  Alternative ohne Konto: Piper-Stimme „Kerstin“ (CC0) mit `tools\tts\make_audio.py`.

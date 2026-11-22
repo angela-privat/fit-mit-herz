@@ -636,7 +636,7 @@ function renderSettings() {
         <button class="btn btn-ghost" id="a-health">${ICON.heart} Gesundheits-Check wiederholen</button>
         <button class="btn btn-danger-ghost" id="a-reset">${ICON.trash} Alle Daten löschen</button>
       </div>
-      <p class="muted small center">Fit mit Herz · Version 2.0 · funktioniert auch offline<br>Stimme der Trainerin: „Kerstin“ aus dem Piper-Projekt (frei lizenziert, CC0)</p>
+      <p class="muted small center">Fit mit Herz · Version 2.1 · funktioniert auch offline<br>Stimme der Trainerin: „Jessica“ von ElevenLabs (elevenlabs.io)</p>
     </section>`;
 
   $('#p-save').addEventListener('click', () => {
@@ -654,7 +654,7 @@ function renderSettings() {
   const fillVoices = () => {
     const sel = $('#v-name'); if (!sel) return;
     const list = germanVoices();
-    sel.innerHTML = `<option value="${RECORDED}">Trainerin Kerstin – natürliche Aufnahme (empfohlen)</option>`
+    sel.innerHTML = `<option value="${RECORDED}">Trainerin Jessica – natürliche Aufnahme (empfohlen)</option>`
       + list.map((v) => `<option value="${esc(v.name)}">Gerätestimme: ${esc(v.name)}${v.localService === false ? ' (online)' : ''}</option>`).join('');
     sel.value = s.voiceName && list.some((v) => v.name === s.voiceName) ? s.voiceName : RECORDED;
     const rec = sel.value === RECORDED;
