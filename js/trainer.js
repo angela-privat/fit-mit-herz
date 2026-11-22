@@ -20,8 +20,8 @@ function beep(freq = 880, dur = 0.12, vol = 0.18) {
   } catch { /* kein Ton möglich */ }
 }
 
-import { say as speak, PHRASES, isCalm, coachCue } from './voice.js';
-const speechBusy = () => { try { return speechSynthesis.speaking || speechSynthesis.pending; } catch { return false; } };
+import { say as speak, PHRASES, isCalm, coachCue, isSpeaking, stopVoice } from './voice.js';
+const speechBusy = isSpeaking;
 // Neue Ansage unterbricht die vorherige, damit nichts hinterherhinkt
 const say = (text) => speak(text, { interrupt: true });
 const sayMore = (text) => speak(text);
@@ -178,21 +178,20 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     P.lastBeep = null;
     const ex0 = EXERCISES[s.id];
     if (phase === 'ready') {
-      say(PHRASES.ready(ex0.n));
+      say(PHRASES.ready(ex0));
     } else if (phase === 'work') {
       beep(990, 0.18); vibrate(120);
       const prev = P.w.steps[P.i - 1];
       const calm = isCalm(ex0);
       // Alles in EINER Ansage – das klingt flüssiger als mehrere Teile hintereinander
       const parts = [];
-      if (P.w.kind === 'day' && prev && prev.section !== s.section) parts.push(PHRASES.section(s.section));
-      parts.push(PHRASES.start(ex0.n, calm));
-      if (store.get().settings.voiceCues !== false) parts.push(ex0.pos);
+      if (P.w.kind === 'day' && prev && prev.section !== s.section) parts.push(...PHRASES.section(s.section));
+      parts.push(...PHRASES.start(ex0, calm, store.get().settings.voiceCues !== false));
       // nach dem Countdown nicht abschneiden, sondern anschließen
-      if (afterCountdown) sayMore(parts.join(' ')); else say(parts.join(' '));
+      if (afterCountdown) sayMore(parts); else say(parts);
     } else if (phase === 'rest' && nextStep()) {
       beep(520, 0.15);
-      say(PHRASES.rest(EXERCISES[nextStep().id].n));
+      say(PHRASES.rest(EXERCISES[nextStep().id]));
     }
     renderStep();
   }
@@ -317,7 +316,7 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     window.removeEventListener('popstate', onPop);
     document.removeEventListener('visibilitychange', onVis);
     keepAwake(false);
-    try { speechSynthesis.cancel(); } catch { /* */ }
+    stopVoice();
     document.body.classList.remove('playing');
     active = null;
   }

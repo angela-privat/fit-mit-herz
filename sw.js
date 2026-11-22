@@ -1,6 +1,6 @@
 ﻿// Fit mit Herz – Service Worker (Offline-Betrieb)
 // WICHTIG: Bei jeder Änderung an der App die Versionsnummer erhöhen.
-const VERSION = 'fmh-v1.3.0';
+const VERSION = 'fmh-v1.4.0';
 const FILES = [
   './',
   './index.html',
@@ -16,13 +16,24 @@ const FILES = [
   './js/charts.js',
   './js/ui.js',
   './js/voice.js',
+  './js/phrases.js',
+  './audio/clips.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const c = await caches.open(VERSION);
+    await c.addAll(FILES);
+    // Sprachaufnahmen der Trainerin für den Offline-Betrieb mitspeichern
+    try {
+      const m = await (await fetch('./audio/clips.json', { cache: 'no-store' })).json();
+      await c.addAll(m.files.map((f) => `./audio/${f}.ogg`));
+    } catch (err) { /* Aufnahmen werden dann beim ersten Abspielen geladen */ }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (e) => {

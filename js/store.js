@@ -21,7 +21,7 @@ export function defaultState() {
     },
     onboarded: false,
     health: { answers: {}, needsDoctor: false, acknowledged: false, date: null },
-    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto', voiceName: '', voiceRate: 1.0, voicePitch: 1.0, voiceCues: true, voiceStyle: 3 },
+    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto', voiceName: '__kerstin', voiceRate: 1.0, voicePitch: 1.0, voiceCues: true, voiceStyle: 4 },
     plan: { start: null, stage: 1, stageSince: null, lastSuggest: null },
     weights: [], // {date, kg, waist?, note?}
     sessions: [], // {id, date, day, kind, title, plannedSec, doneSec, completed, done:[ids], kcal, feedback, stage, stop}
@@ -93,12 +93,14 @@ export async function load() {
   state = merge(defaultState(), data);
   // Stimme (Version 3): alte Standardwerte auf die neuen Werte umstellen
   const vs = state.settings;
-  if (vs.voiceStyle !== 3) {
+  if ((vs.voiceStyle ?? 0) < 3) {
     // frühere Standardwerte → ruhigeres, flüssigeres Sprechen (nur wenn nicht selbst verändert)
     const r = vs.voiceRate ?? 1, pt = vs.voicePitch ?? 1.1;
     if ((r === 1 && pt === 1.1) || (r === 1.1 && pt === 0.95)) { vs.voiceRate = 1.0; vs.voicePitch = 1.0; }
     vs.voiceStyle = 3;
   }
+  // Version 4: echte Aufnahmen der Trainerin werden Standard
+  if (vs.voiceStyle === 3) { vs.voiceName = '__kerstin'; vs.voiceRate = 1.0; vs.voiceStyle = 4; }
   // Browser bitten, die Daten nicht automatisch zu löschen
   try { if (navigator.storage?.persist) await navigator.storage.persist(); } catch { /* egal */ }
   return state;

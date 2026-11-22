@@ -4,7 +4,7 @@ import { EXERCISES, EXERCISE_LIST, CATEGORIES, doseText, levelName } from './exe
 import { DAYS, buildDay, buildProgram, buildSingle, PROGRAMS, STAGES, VARIANTS, SECTION_NAMES, weekdayOf, weekIndex, mondayOf } from './plans.js';
 import { createFigure } from './figures.js';
 import { startWorkout, isPlaying } from './trainer.js';
-import { germanVoices, say, PHRASES } from './voice.js';
+import { germanVoices, say, PHRASES, RECORDED } from './voice.js';
 import {
   currentStreak, longestStreak, weekStats, totals, weightSummary, weeklyWeights, stageAdvice,
   ACHIEVEMENTS, checkAchievements, quoteOfDay, greeting, bmiText,
@@ -609,9 +609,9 @@ function renderSettings() {
       <div class="voicebox">
         <label class="field"><span>Stimme</span><select id="v-name"></select></label>
         <label class="field"><span>Sprechtempo <output id="v-rate-o"></output></span><input type="range" id="v-rate" min="0.8" max="1.25" step="0.05" value="${s.voiceRate ?? 1}"></label>
-        <label class="field"><span>Tonhöhe <output id="v-pitch-o"></output></span><input type="range" id="v-pitch" min="0.8" max="1.4" step="0.05" value="${s.voicePitch ?? 1}"></label>
+        <label class="field" id="v-pitch-f"><span>Tonhöhe <output id="v-pitch-o"></output></span><input type="range" id="v-pitch" min="0.8" max="1.4" step="0.05" value="${s.voicePitch ?? 1}"></label>
         <button class="btn btn-ghost full" id="v-test">${ICON.sound} Stimme anhören</button>
-        <p class="muted small">Tipp: Stimmen mit „Online“, „Natural“ oder „Netzwerk“ im Namen klingen meist am natürlichsten. Welche Stimmen es gibt, hängt von deinem Gerät ab.</p>
+        <p class="muted small" id="v-hint"></p>
       </div>
       ${toggle('vibrate', 'Vibration', 'nur auf dem Handy')}
       ${toggle('easyDefault', 'Leichtere Varianten immer anzeigen', 'Empfohlen für die ersten Wochen oder an schweren Tagen')}
@@ -633,7 +633,7 @@ function renderSettings() {
         <button class="btn btn-ghost" id="a-health">${ICON.heart} Gesundheits-Check wiederholen</button>
         <button class="btn btn-danger-ghost" id="a-reset">${ICON.trash} Alle Daten löschen</button>
       </div>
-      <p class="muted small center">Fit mit Herz · Version 1.0 · funktioniert auch offline</p>
+      <p class="muted small center">Fit mit Herz · Version 1.4 · funktioniert auch offline<br>Stimme der Trainerin: „Kerstin“ aus dem Piper-Projekt (frei lizenziert, CC0)</p>
     </section>`;
 
   $('#p-save').addEventListener('click', () => {
@@ -651,16 +651,20 @@ function renderSettings() {
   const fillVoices = () => {
     const sel = $('#v-name'); if (!sel) return;
     const list = germanVoices();
-    sel.innerHTML = list.length
-      ? list.map((v) => `<option value="${esc(v.name)}" ${v.name === s.voiceName ? 'selected' : ''}>${esc(v.name)}${v.localService === false ? ' (online)' : ''}</option>`).join('')
-      : '<option value="">Standardstimme des Geräts</option>';
-    if (!s.voiceName && list[0]) sel.value = list[0].name;
+    sel.innerHTML = `<option value="${RECORDED}">Trainerin Kerstin – natürliche Aufnahme (empfohlen)</option>`
+      + list.map((v) => `<option value="${esc(v.name)}">Gerätestimme: ${esc(v.name)}${v.localService === false ? ' (online)' : ''}</option>`).join('');
+    sel.value = s.voiceName && list.some((v) => v.name === s.voiceName) ? s.voiceName : RECORDED;
+    const rec = sel.value === RECORDED;
+    $('#v-pitch-f').hidden = rec;
+    $('#v-hint').textContent = rec
+      ? 'Die Aufnahmen sind in der App gespeichert und funktionieren auch ohne Internet.'
+      : 'Gerätestimmen klingen je nach Handy unterschiedlich. Stimmen mit „Online“ oder „Natural“ im Namen sind meist am natürlichsten.';
   };
   fillVoices();
   try { speechSynthesis.addEventListener('voiceschanged', fillVoices, { once: true }); } catch { /* */ }
   const showVals = () => { $('#v-rate-o').textContent = n1($('#v-rate').value) + '×'; $('#v-pitch-o').textContent = n1($('#v-pitch').value); };
   showVals();
-  $('#v-name').addEventListener('change', (e) => { s.voiceName = e.target.value; store.save(); say(PHRASES.test(), { interrupt: true, force: true }); });
+  $('#v-name').addEventListener('change', (e) => { s.voiceName = e.target.value; store.save(); fillVoices(); say(PHRASES.test(), { interrupt: true, force: true }); });
   $('#v-rate').addEventListener('input', (e) => { s.voiceRate = +e.target.value; showVals(); store.save(); });
   $('#v-pitch').addEventListener('input', (e) => { s.voicePitch = +e.target.value; showVals(); store.save(); });
   $('#v-rate').addEventListener('change', () => say(PHRASES.test(), { interrupt: true, force: true }));

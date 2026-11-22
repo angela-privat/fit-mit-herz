@@ -73,3 +73,5 @@ Dann im Browser `http://localhost:4173` öffnen. (Nur auf diesem PC – das Hand
 - Figuren-Prüfseite: `http://localhost:4173/tools/figures.html`.
 - Nach jeder Änderung die Versionsnummer in `sw.js` erhöhen, damit Handys das Update laden.
 - Aufbau: `index.html`, `css/app.css`, `js/` (app, store, exercises, plans, figures, trainer, progress, charts, ui), `sw.js`, `manifest.webmanifest`, `icons/`.
+- Sprachaufnahmen der Trainerin: Texte stehen in `js/phrases.js` (plus Übungsnamen und Haltungstipps aus `js/exercises.js`). Nach Textänderungen neu erzeugen mit
+  `%USERPROFILE%\fmh-tts\venv\Scripts\python tools\tts\make_audio.py` (Einrichtung siehe Kopf der Datei). Stimme: „Kerstin“ (Piper, Lizenz CC0).
