@@ -1,0 +1,8 @@
+# Nur lokal – nicht veröffentlichen (persönliche Angaben, Arbeitsnotizen)
+PLAN.md
+STATUS.md
+docs/
+.claude/
+Fit mit Herz starten.bat
+node_modules/
+*.log

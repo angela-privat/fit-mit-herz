@@ -1,0 +1,1 @@
+{ "name": "fit-mit-herz", "private": true, "type": "module", "scripts": { "test": "node tests/check.mjs", "start": "node tools/server.js" } }

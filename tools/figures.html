@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Figuren-Prüfung</title>
+<link rel="stylesheet" href="../css/app.css">
+<style>
+  body{padding:10px;background:#fff7f0} .g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .c{background:#fff;border-radius:10px;padding:4px;font:12px sans-serif} .c b{display:block;margin:2px 4px}
+  .f{display:flex} .f svg{width:50%;height:auto;background:#fdeee3;border-radius:6px;margin:1px}
+</style></head><body>
+<div class="g" id="g"></div>
+<script type="module">
+import { EXERCISE_LIST } from '../js/exercises.js';
+import { createFigure } from '../js/figures.js';
+const g = document.getElementById('g');
+const only = new URLSearchParams(location.search).get('ids');
+for (const e of EXERCISE_LIST) {
+  if (only && !only.split(',').includes(e.id)) continue;
+  const c = document.createElement('div'); c.className = 'c';
+  c.innerHTML = `<b>${e.id}</b>`;
+  const f = document.createElement('div'); f.className = 'f';
+  for (const fr of [e.k[0], e.k[e.k.length - 1]]) f.appendChild(createFigure([fr]).svg);
+  c.appendChild(f); g.appendChild(c);
+}
+</script></body></html>
