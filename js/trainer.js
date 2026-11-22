@@ -20,7 +20,8 @@ function beep(freq = 880, dur = 0.12, vol = 0.18) {
   } catch { /* kein Ton möglich */ }
 }
 
-import { say as speak, PHRASES, stopVoice } from './voice.js';
+import { say as speak, PHRASES, isCalm, coachCue } from './voice.js';
+const speechBusy = () => { try { return speechSynthesis.speaking || speechSynthesis.pending; } catch { return false; } };
 // Neue Ansage unterbricht die vorherige, damit nichts hinterherhinkt
 const say = (text) => speak(text, { interrupt: true });
 const sayMore = (text) => speak(text);
@@ -171,6 +172,8 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     P.sideSwitched = false;
     P.saidHalf = false;
     P.saidTen = false;
+    P.saidCount = false;
+    P.nextCoach = 16;
     P.lastBeep = null;
     const ex0 = EXERCISES[s.id];
     if (phase === 'ready') {
@@ -178,8 +181,9 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     } else if (phase === 'work') {
       beep(990, 0.18); vibrate(120);
       const prev = P.w.steps[P.i - 1];
-      if (P.w.kind === 'day' && prev && prev.section !== s.section) { say(PHRASES.section(s.section)); sayMore(PHRASES.start(ex0.n)); }
-      else say(PHRASES.start(ex0.n));
+      const calm = isCalm(ex0);
+      if (P.w.kind === 'day' && prev && prev.section !== s.section) { say(PHRASES.section(s.section)); sayMore(PHRASES.start(ex0.n, calm)); }
+      else say(PHRASES.start(ex0.n, calm));
       if (store.get().settings.voiceCues !== false) sayMore(ex0.pos);
     } else if (phase === 'rest' && nextStep()) {
       beep(520, 0.15);
@@ -220,10 +224,15 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
         P.sideSwitched = true; beep(880, 0.12); vibrate([80, 60, 80]); say(PHRASES.side());
       }
       if (P.phase === 'work' && s.work >= 30) {
-        const sided = EXERCISES[s.id].sided;
-        if (!sided && !P.saidHalf && P.remaining <= s.work / 2 && P.remaining > 12) { P.saidHalf = true; sayMore(PHRASES.half()); }
-        if (!P.saidTen && P.remaining <= 10.5 && P.remaining > 9) { P.saidTen = true; sayMore(PHRASES.ten()); }
+        const ex1 = EXERCISES[s.id], calm = isCalm(ex1), elapsed = s.work - P.remaining;
+        if (!ex1.sided && !P.saidHalf && P.remaining <= s.work / 2 && P.remaining > 12) { P.saidHalf = true; sayMore(PHRASES.half(calm)); }
+        else if (!P.saidTen && P.remaining <= 10.5 && P.remaining > 9) { P.saidTen = true; sayMore(PHRASES.ten(calm)); }
+        // Trainer-Zurufe zwischendurch, aber nicht kurz vor Halbzeit, Seitenwechsel oder Ende
+        else if (elapsed >= P.nextCoach && P.remaining > 14 && Math.abs(P.remaining - s.work / 2) > 5 && !speechBusy()) {
+          P.nextCoach = elapsed + 14; sayMore(coachCue(calm));
+        }
       }
+      if (P.phase === 'rest' && s.rest >= 8 && !P.saidCount && P.remaining <= 3.4) { P.saidCount = true; say(PHRASES.countdown()); }
       if (P.remaining <= 0) advance();
       else renderTime();
     }

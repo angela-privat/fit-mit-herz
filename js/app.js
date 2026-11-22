@@ -608,8 +608,8 @@ function renderSettings() {
       ${toggle('voiceCues', 'Haltungstipp vorlesen', 'Zu jeder Übung ein kurzer Hinweis zur richtigen Haltung')}
       <div class="voicebox">
         <label class="field"><span>Stimme</span><select id="v-name"></select></label>
-        <label class="field"><span>Sprechtempo <output id="v-rate-o"></output></span><input type="range" id="v-rate" min="0.8" max="1.25" step="0.05" value="${s.voiceRate ?? 1}"></label>
-        <label class="field"><span>Tonhöhe <output id="v-pitch-o"></output></span><input type="range" id="v-pitch" min="0.8" max="1.4" step="0.05" value="${s.voicePitch ?? 1.1}"></label>
+        <label class="field"><span>Sprechtempo <output id="v-rate-o"></output></span><input type="range" id="v-rate" min="0.8" max="1.25" step="0.05" value="${s.voiceRate ?? 1.1}"></label>
+        <label class="field"><span>Tonhöhe <output id="v-pitch-o"></output></span><input type="range" id="v-pitch" min="0.8" max="1.4" step="0.05" value="${s.voicePitch ?? 0.95}"></label>
         <button class="btn btn-ghost full" id="v-test">${ICON.sound} Stimme anhören</button>
         <p class="muted small">Tipp: Stimmen mit „Online“, „Natural“ oder „Netzwerk“ im Namen klingen meist am natürlichsten. Welche Stimmen es gibt, hängt von deinem Gerät ab.</p>
       </div>

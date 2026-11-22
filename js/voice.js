@@ -33,10 +33,11 @@ export function say(text, { interrupt = false, force = false } = {}) {
   if ((!st.voice && !force) || !('speechSynthesis' in self) || !text) return;
   try {
     if (interrupt) speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
+    // Klammerzusätze wie „(Step-Touch)“ nicht vorlesen
+    const u = new SpeechSynthesisUtterance(text.replace(/\s*\([^)]*\)/g, ''));
     u.lang = 'de-DE';
-    u.rate = st.voiceRate || 1.0;
-    u.pitch = st.voicePitch || 1.1;
+    u.rate = st.voiceRate || 1.1;
+    u.pitch = st.voicePitch || 0.95;
     const v = currentVoice();
     if (v) u.voice = v;
     speechSynthesis.speak(u);
@@ -47,20 +48,47 @@ export const stopVoice = () => { try { speechSynthesis.cancel(); } catch { /* */
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+// Ruhige Übungen (Dehnen, Atmen, Yoga-Haltungen) bekommen ruhige, aber klare Ansagen –
+// Kraft- und Cardio-Übungen bekommen Trainer-Power.
+export const isCalm = (ex) => !!ex && (ex.cat.includes('breath') || ex.cat.includes('stretch') || (ex.cat.includes('yoga') && ex.dose.hold));
+
 export const PHRASES = {
-  ready: (name) => pick([`Schön, dass du da bist! Wir starten mit ${name}.`, `Auf geht's! Als Erstes: ${name}.`, `Los geht's, du schaffst das! Zuerst: ${name}.`]),
-  start: (name) => pick([`Jetzt: ${name}.`, `Weiter geht's mit ${name}.`, `Und jetzt: ${name}.`, `${name}. Ganz ruhig und gleichmäßig.`]),
-  cue: (text) => text,
-  half: () => pick(['Halbzeit – super machst du das!', 'Die Hälfte ist geschafft. Weiter so!', 'Prima, schon die Hälfte!', 'Halbzeit. Atme ruhig weiter.']),
-  ten: () => pick(['Noch zehn Sekunden!', 'Nur noch zehn Sekunden, durchhalten!', 'Gleich geschafft, noch zehn Sekunden.']),
-  side: () => pick(['Und jetzt die andere Seite.', 'Seitenwechsel bitte.', 'Jetzt kommt die zweite Seite.']),
-  rest: (name) => pick([`Kurze Pause. Gleich kommt: ${name}.`, `Gut gemacht! Durchatmen. Als Nächstes: ${name}.`, `Prima! Kleine Pause, dann ${name}.`]),
+  ready: (name) => pick([
+    `Okay, los geht's! Wir starten mit ${name}. Stell dich bereit!`,
+    `Hallo! Heute ziehen wir das gemeinsam durch. Erste Übung: ${name}.`,
+    `Bereit? Dreißig Minuten gehören dir. Wir beginnen mit ${name}.`,
+  ]),
+  start: (name, calm) => calm
+    ? pick([`${name}. Ruhig rein in die Position.`, `Jetzt ${name}. Langsam und kontrolliert.`, `${name}. Atme ruhig und gleichmäßig.`])
+    : pick([`Und los! ${name}!`, `Los geht's! ${name}!`, `Auf geht's! ${name}!`, `Jetzt ${name}! Saubere Ausführung!`]),
+  half: (calm) => calm
+    ? pick(['Halbzeit. Lass weiter locker.', 'Die Hälfte. Atme tief in die Dehnung.'])
+    : pick(['Halbzeit! Stark, weiter so!', 'Die Hälfte ist geschafft! Nicht nachlassen!', 'Halbzeit! Du bist voll dabei!']),
+  ten: (calm) => calm
+    ? pick(['Noch zehn Sekunden. Ganz ruhig.', 'Noch zehn Sekunden halten.'])
+    : pick(['Noch zehn Sekunden! Durchziehen!', 'Zehn Sekunden noch! Gib alles!', 'Letzte zehn Sekunden! Du schaffst das!']),
+  side: () => pick(['Seitenwechsel! Andere Seite!', 'Und jetzt die andere Seite! Los!', 'Wechsel! Zweite Seite!']),
+  rest: (name) => pick([
+    `Pause! Gut gemacht. Locker ausschütteln. Als Nächstes: ${name}.`,
+    `Stark! Kurz durchatmen. Gleich kommt ${name}. Mach dich bereit!`,
+    `Sehr gut! Kurze Pause. Nächste Übung: ${name}.`,
+  ]),
+  countdown: () => 'Drei, zwei, eins!',
   section: (sec) => ({
-    main: pick(['Aufwärmen geschafft! Jetzt beginnt das Haupttraining.', 'Super, du bist warm. Jetzt kommt das Haupttraining.']),
-    cool: pick(['Toll durchgehalten! Jetzt dehnen und entspannen wir.', 'Das Haupttraining ist geschafft! Zum Schluss wird gedehnt.']),
+    main: pick([`Aufwärmen erledigt! Jetzt wird's ernst: Haupttraining! Bleib dran!`, 'Du bist warm! Jetzt kommt das Haupttraining. Volle Konzentration!']),
+    cool: pick(['Haupttraining geschafft! Klasse Leistung! Jetzt dehnen wir und fahren runter.', 'Stark durchgezogen! Zum Schluss: dehnen und entspannen.']),
   }[sec] || ''),
-  pause: () => pick(['Pause. Tipp einfach auf Weiter, wenn du bereit bist.', 'Kurze Pause. Lass dir Zeit.']),
-  done: () => pick(['Geschafft! Du kannst richtig stolz auf dich sein.', 'Fantastisch, Training beendet! Gönn dir ein Glas Wasser.', 'Wunderbar gemacht! Bis morgen.']),
-  stop: () => 'Bitte hör jetzt auf und ruh dich aus.',
-  test: () => 'Hallo! So klinge ich im Training. Weiter so, du machst das großartig!',
+  pause: () => pick(['Pause. Tipp auf Weiter, wenn du bereit bist.', `Kurze Pause. Dann geht's weiter!`]),
+  done: () => pick([
+    'Geschafft! Hervorragende Arbeit! Darauf kannst du stolz sein!',
+    'Training beendet! Starke Leistung heute! Trink ein Glas Wasser.',
+    'Fertig! Das war richtig gut! Morgen machen wir weiter!',
+  ]),
+  stop: () => 'Stopp! Hör sofort auf und ruh dich aus.',
+  test: () => 'Hallo, ich bin deine Trainerin! Los geht\'s! Bauch fest, Schultern runter und weiter atmen! Du schaffst das!',
 };
+
+// Kurze Zurufe während der Übung
+const COACH_POWER = ['Bauch fest!', 'Schultern runter!', 'Weiter atmen!', 'Sauber bleiben!', 'Kontrolliert! Kein Schwung!', 'Gut so! Weiter!', 'Stark! Bleib dran!', 'Rücken gerade!', 'Langsam und sauber!', 'Super Tempo! Weiter!'];
+const COACH_CALM = ['Tief einatmen. Lang ausatmen.', 'Lass die Schultern sinken.', 'Nur bis zum angenehmen Ziehen.', 'Locker lassen.', 'Atme in die Dehnung hinein.'];
+export const coachCue = (calm) => pick(calm ? COACH_CALM : COACH_POWER);
