@@ -1,6 +1,6 @@
 ﻿// Fit mit Herz – Service Worker (Offline-Betrieb)
 // WICHTIG: Bei jeder Änderung an der App die Versionsnummer erhöhen.
-const VERSION = 'fmh-v1.5.0';
+const VERSION = 'fmh-v2.0.0';
 const FILES = [
   './',
   './index.html',
@@ -17,6 +17,8 @@ const FILES = [
   './js/ui.js',
   './js/voice.js',
   './js/phrases.js',
+  './js/tips.js',
+  './js/body.js',
   './audio/clips.json',
   './icons/icon-192.png',
   './icons/icon-512.png',

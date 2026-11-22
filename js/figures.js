@@ -5,6 +5,7 @@
 const LEN = { torso: 48, neck: 7, head: 11, ua: 27, fa: 25, th: 40, sh: 40, ft: 11 };
 export const GROUND = 197;
 const NS = 'http://www.w3.org/2000/svg';
+import { buildBody, renderBody } from './body.js';
 
 const DEF = {
   v: 'side', x: 120, y: 112, t: 180, h: 180, c: 0, su: 0, n: 0,
@@ -99,83 +100,6 @@ const setL = (ln, a, b) => {
 const setC = (c, pt) => { c.setAttribute('cx', r1(pt[0])); c.setAttribute('cy', r1(pt[1])); };
 const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 
-/** Legt alle Körperteile an (Reihenfolge = Zeichenreihenfolge: hinten → vorn). */
-function buildBody(g, front) {
-  const L = (cls) => el('line', { class: cls }, g);
-  const C = (cls, r) => el('circle', { class: cls, r }, g);
-  const P = (cls) => el('path', { class: cls }, g);
-  const parts = {};
-  const arm = (i, far) => {
-    const f = far ? ' far' : '';
-    parts['ua' + i] = L('f-skin f-ua' + f);
-    parts['sl' + i] = L('f-shirt f-sleeve' + f);
-    parts['fa' + i] = L('f-skin f-fa' + f);
-    parts['hd' + i] = C('f-skinfill f-hand' + f, 4.6);
-  };
-  const leg = (i, far) => {
-    const f = far ? ' far' : '';
-    parts['th' + i] = L('f-legs f-th' + f);
-    parts['sh' + i] = L('f-legs f-shin' + f);
-    parts['ft' + i] = L('f-shoe' + f);
-  };
-  if (!front) { arm(2, true); leg(2, true); } else { leg(1); leg(2); }
-  parts.torso = P(front ? 'f-shirt f-torsoF' : 'f-shirt f-torso');
-  if (front) parts.hipbar = L('f-legs f-hipbar');
-  if (!front) parts.waist = P('f-legs f-waist');
-  if (front) parts.shbar = L('f-shirt f-shbar');
-  parts.neck = L('f-skin f-neck');
-  parts.tail = C('f-hairfill', 6.5);
-  parts.hair = C('f-hairfill', 13);
-  parts.head = C('f-skinfill', 12);
-  if (front) {
-    parts.eye1 = C('f-eye', 1.6); parts.eye2 = C('f-eye', 1.6); parts.mouth = P('f-mouth');
-  } else {
-    parts.nose = C('f-skinfill', 3); parts.eye = C('f-eye', 1.6);
-  }
-  if (!front) { leg(1); arm(1); } else { arm(1); arm(2); }
-  return parts;
-}
-
-function renderBody(parts, s) {
-  for (const i of [1, 2]) {
-    const S = s['S' + i], E = s['E' + i], W = s['W' + i];
-    setL(parts['ua' + i], S, E); setL(parts['sl' + i], S, mix(S, E, 0.42)); setL(parts['fa' + i], E, W); setC(parts['hd' + i], W);
-    setL(parts['th' + i], s['H' + i], s['K' + i]); setL(parts['sh' + i], s['K' + i], s['A' + i]); setL(parts['ft' + i], s['A' + i], s['T' + i]);
-  }
-  if (s.front) {
-    // Oberteil als Trapez: breite Schultern, schmalere Taille
-    const out = (p, q, by) => { const dx = p[0] - q[0], dy = p[1] - q[1], l = Math.hypot(dx, dy) || 1; return [p[0] + dx / l * by, p[1] + dy / l * by]; };
-    const a = out(s.S1, s.S2, 2), b = out(s.S2, s.S1, 2), c = out(s.H2, s.H1, 1), e = out(s.H1, s.H2, 1);
-    parts.torso.setAttribute('d', `M${r1(a[0])} ${r1(a[1])} L${r1(b[0])} ${r1(b[1])} L${r1(c[0])} ${r1(c[1])} L${r1(e[0])} ${r1(e[1])} Z`);
-  } else {
-    parts.torso.setAttribute('d', `M${r1(s.hip[0])} ${r1(s.hip[1])} Q${r1(s.mid[0])} ${r1(s.mid[1])} ${r1(s.sh[0])} ${r1(s.sh[1])}`);
-  }
-  if (parts.waist) {
-    // unteres Stück des Rumpfes in Hosenfarbe (Hüfte)
-    const t = 0.24, c = mix(s.hip, s.mid, t);
-    const q = mix(mix(s.hip, s.mid, t), mix(s.mid, s.sh, t), t);
-    parts.waist.setAttribute('d', `M${r1(s.hip[0])} ${r1(s.hip[1])} Q${r1(c[0])} ${r1(c[1])} ${r1(q[0])} ${r1(q[1])}`);
-  }
-  if (parts.shbar) setL(parts.shbar, s.S1, s.S2);
-  if (parts.hipbar) setL(parts.hipbar, s.H1, s.H2);
-  setL(parts.neck, s.sh, s.nk);
-  setC(parts.head, s.head);
-  if (s.front) {
-    setC(parts.hair, [s.head[0] + s.axis[0] * 2.5, s.head[1] + s.axis[1] * 2.5]);
-    setC(parts.tail, [s.head[0] + s.axis[0] * 13, s.head[1] + s.axis[1] * 13]);
-    const n = s.p.n || 0;
-    const at = (x, y) => [s.head[0] + s.right[0] * x + s.axis[0] * y, s.head[1] + s.right[1] * x + s.axis[1] * y];
-    setC(parts.eye1, at(n * 5 - 4, 1)); setC(parts.eye2, at(n * 5 + 4, 1));
-    const m1 = at(n * 5 - 3.2, -4.5), m2 = at(n * 5 + 3.2, -4.5), mc = at(n * 5, -7);
-    parts.mouth.setAttribute('d', `M${r1(m1[0])} ${r1(m1[1])} Q${r1(mc[0])} ${r1(mc[1])} ${r1(m2[0])} ${r1(m2[1])}`);
-  } else {
-    setC(parts.hair, [s.head[0] - s.faceDir[0] * 2.5 + s.axis[0] * 2, s.head[1] - s.faceDir[1] * 2.5 + s.axis[1] * 2]);
-    setC(parts.tail, [s.head[0] - s.faceDir[0] * 12.5 + s.axis[0] * 3, s.head[1] - s.faceDir[1] * 12.5 + s.axis[1] * 3]);
-    setC(parts.nose, [s.head[0] + s.faceDir[0] * 11, s.head[1] + s.faceDir[1] * 11]);
-    setC(parts.eye, [s.head[0] + s.faceDir[0] * 6 + s.axis[0] * 2, s.head[1] + s.faceDir[1] * 6 + s.axis[1] * 2]);
-  }
-}
-
 /** Bewegungspfeil: zeigt, welcher Körperteil sich wohin bewegt. */
 function drawArrow(svg, frames, id) {
   if (frames.length < 2) return;
@@ -203,6 +127,34 @@ function drawArrow(svg, frames, id) {
   const trim = (p, toward, by) => { const l = Math.hypot(toward[0] - p[0], toward[1] - p[1]) || 1; return [p[0] + (toward[0] - p[0]) / l * by, p[1] + (toward[1] - p[1]) / l * by]; };
   const A2 = trim(A, ctrl, 9), B2 = trim(B, ctrl, 11);
   el('path', { class: 'f-arrow', d: `M${r1(A2[0])} ${r1(A2[1])} Q${r1(ctrl[0])} ${r1(ctrl[1])} ${r1(B2[0])} ${r1(B2[1])}`, 'marker-end': `url(#${id})` }, svg);
+}
+
+// ---------- Hervorhebung des bewegten Körperteils ----------
+const HL = { arm: ['arm1'], arms: ['arm1', 'arm2'], leg: ['leg1'], legs: ['leg1', 'leg2'], head: ['head'], torso: ['torso'], shoulders: ['shoulders'], arm1: ['arm1'], arm2: ['arm2'], leg1: ['leg1'], leg2: ['leg2'] };
+function highlightClasses(h) {
+  if (!h) return '';
+  const list = (Array.isArray(h) ? h : [h]).flatMap((x) => HL[x] || []);
+  return [...new Set(list)].map((x) => 'hl-' + x).join(' ');
+}
+
+/** Erkennt aus den Posen, welcher Körperteil sich am meisten bewegt (Winkel relativ zum Rumpf). */
+export function autoHighlight(frames) {
+  if (frames.length < 2) return '';
+  const F = frames.map((f) => ({ ...DEF, ...f }));
+  const a = F[0];
+  const d = (fn) => Math.max(...F.map((f) => Math.abs(fn(f) - fn(a))));
+  const g = {
+    arm1: d((f) => f.a1 - f.t) + d((f) => f.f1 - f.a1),
+    arm2: d((f) => f.a2 - f.t) + d((f) => f.f2 - f.a2),
+    leg1: d((f) => f.l1) + d((f) => f.s1 - f.l1) + 0.4 * d((f) => f.p1),
+    leg2: d((f) => f.l2) + d((f) => f.s2 - f.l2) + 0.4 * d((f) => f.p2),
+    head: d((f) => f.h - f.t) + 40 * d((f) => f.n),
+    torso: d((f) => f.t) + 3 * d((f) => f.c) + 0.6 * d((f) => f.y),
+    shoulders: 4 * d((f) => f.su),
+  };
+  const max = Math.max(...Object.values(g));
+  if (max < 10) return '';
+  return Object.entries(g).filter(([, v]) => v >= max * 0.55 && v >= 10).map(([k]) => 'hl-' + k).join(' ');
 }
 
 /** Kreisspur: zeigt bei Kreisbewegungen den Weg des sich am meisten bewegenden Körperteils. */
@@ -234,7 +186,8 @@ function drawLoopTrail(svg, frames, id) {
 export function createFigure(frames, opts = {}) {
   const id = 'ah' + (++uid);
   const vb = opts.zoom ? opts.zoom.join(' ') : '0 0 240 210';
-  const svg = el('svg', { viewBox: vb, class: 'figure' + (opts.zoom ? ' zoomed' : '') + (opts.highlight ? ' hl-' + opts.highlight : ''), role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
+  const hl = opts.highlight === undefined ? autoHighlight(frames) : highlightClasses(opts.highlight);
+  const svg = el('svg', { viewBox: vb, class: 'figure' + (opts.zoom ? ' zoomed' : '') + (hl ? ' ' + hl : ''), role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
   const defs = el('defs', {}, svg);
   const mk = el('marker', { id, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 3.4, markerHeight: 3.4, orient: 'auto-start-reverse' }, defs);
   el('path', { d: 'M0 0 L10 5 L0 10 Z', class: 'f-arrowhead' }, mk);

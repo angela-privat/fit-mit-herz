@@ -442,7 +442,28 @@ body.playing { overflow: hidden; }
 .steps4 svg { width: 100%; height: auto; display: block; }
 .funtip { background: var(--sun-l); border-radius: 14px; padding: 12px 14px; margin: 12px 0 4px; font-size: .98rem; }
 .pl-tip { margin-top: 6px; background: var(--sun-l); border-radius: 12px; padding: 8px 12px; font-size: .9rem; max-width: 520px; }
-.hl-arm .fig-body .f-ua:not(.far), .hl-arm .fig-body .f-fa:not(.far), .hl-arm .fig-body .f-sleeve:not(.far), .hl-arm .fig-body .f-hand:not(.far) {
-  filter: drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 2.4px var(--arrow));
+.hl-arm1 .fig-body g.arm1, .hl-arm2 .fig-body g.arm2, .hl-leg1 .fig-body g.leg1, .hl-leg2 .fig-body g.leg2,
+.hl-head .fig-body g.headp, .hl-torso .fig-body g.torsop, .hl-shoulders .fig-body g.torsop {
+  filter: drop-shadow(0 0 1.6px rgba(255, 255, 255, .95)) drop-shadow(0 0 3px rgba(240, 160, 30, .75));
 }
 .figure.zoomed { overflow: hidden; }
+
+/* ---------- Neue Trainerin-Figur ---------- */
+.figure { --b-skin: #f0b994; --b-skin-far: #d39b78; --b-skin2: #e7a682; --b-top: #ea7a33; --b-legs: #4c3448; --b-legs-far: #34233a;
+  --b-shoe: #f8f5f2; --b-shoe-far: #ddd6d1; --b-sole: #ea7a33; --b-hair: #7b4426; --b-hair2: #8f5430; --b-line: rgba(80, 40, 30, .28); }
+@media (prefers-color-scheme: dark) { .figure { --b-legs: #6e4e6c; --b-legs-far: #4d3650; --b-line: rgba(0, 0, 0, .35); } }
+.figure .fp { stroke: none; }
+.figure .b-skin { fill: var(--b-skin); } .figure .b-skin.far { fill: var(--b-skin-far); }
+.figure .b-skin2 { fill: var(--b-skin2); }
+.figure .b-top { fill: var(--b-top); }
+.figure .b-legs { fill: var(--b-legs); } .figure .b-legs.far { fill: var(--b-legs-far); }
+.figure .b-shoe { fill: var(--b-shoe); } .figure .b-shoe.far { fill: var(--b-shoe-far); }
+.figure .b-sole { stroke: var(--b-sole); stroke-width: 1.8; fill: none; stroke-linecap: round; }
+.figure .b-band { fill: #3a3a48; }
+.figure .b-hair { fill: var(--b-hair); } .figure .b-hair2 { fill: var(--b-hair2); }
+.figure .b-eye { fill: #3a2722; } .figure .b-eyehl { fill: #fff; }
+.figure .b-brow { stroke: #6a3a22; stroke-width: 1.1; fill: none; stroke-linecap: round; }
+.figure .b-mouth { stroke: #a8442f; stroke-width: 1.2; fill: none; stroke-linecap: round; }
+.figure .b-nosel { stroke: #c9805f; stroke-width: 1; fill: none; stroke-linecap: round; }
+.figure .b-blush { fill: #f2857a; opacity: .4; }
+.figure .b-shadow { fill: #000; opacity: .08; }

@@ -2,6 +2,8 @@
 // Jede Übung: Name, Anleitung, Haltung, Fehler, Muskeln, leichtere Variante, Dosierung, Figur-Posen.
 // Grundsatz: langsam, kontrolliert, schmerzfrei. Keine ruckartigen Bewegungen, Nacken nie überstrecken.
 
+import { TIPS } from './tips.js';
+
 const P = (base, o = {}) => ({ ...base, ...o });
 
 // ---------- Grundhaltungen ----------
@@ -16,6 +18,30 @@ const SUPF = P(SUP, { l1: 90, s1: 90, l2: 90, s2: 90, p1: 180, p2: 180 });
 const PRO = { v: 'side', x: 100, y: 185, t: 90, h: 92, a1: 270, f1: 270, a2: 270, f2: 270, l1: 270, s1: 270, l2: 270, s2: 270, p1: 300, p2: 300, prop: 'mat' };
 const CHILD = { v: 'side', x: 75, y: 173, t: 80, h: 75, a1: 90, f1: 90, a2: 90, f2: 90, l1: 61, s1: 270, l2: 61, s2: 270, p1: 270, p2: 270, prop: 'mat' };
 const CHAIR_HOLD = { a1: 50, f1: 56, a2: 50, f2: 56, prop: 'chairR' };
+
+// Bein-Winkel so berechnen, dass der Fuß an einer festen Stelle bleibt (Hüfte → Knöchel).
+// sign: +1 Knie nach vorn/rechts, -1 Knie nach hinten/links.
+function ik(hx, hy, ax, ay, sign) {
+  const dx = ax - hx, dy = ay - hy;
+  const d = Math.min(Math.hypot(dx, dy), 79.8);
+  const base = (Math.atan2(dx, dy) * 180) / Math.PI;
+  const off = (Math.acos(d / 80) * 180) / Math.PI;
+  return [base + sign * off, base - sign * off];
+}
+
+// Bildausschnitte (Vergrößerung) für Übungen, bei denen es auf Details ankommt
+const Z = {
+  upSide: [52, 4, 136, 119], upFront: [44, 0, 152, 133],
+  headSit: [50, 44, 112, 98], headSitF: [64, 38, 112, 98], upSitF: [52, 16, 136, 119],
+  floorMid: [36, 82, 168, 147],
+};
+
+// Hüftkreisen: Becken malt einen Kreis, die Füße bleiben stehen
+const hipCircle = [[113, 112], [120, 109], [127, 112], [120, 115], [113, 112]].map(([hx, hy]) => {
+  const [l1, s1] = ik(hx - 9, hy, 106.8, 191.9, -1);
+  const [l2, s2] = ik(hx + 9, hy, 133.2, 191.9, 1);
+  return P(STF, { ...HIPS, x: hx, y: hy, t: 180 + (hx - 120) * 0.6, l1, s1, l2, s2 });
+});
 
 // Kategorien (für Filter & Pläne)
 export const CATEGORIES = {
@@ -61,7 +87,8 @@ const list = [
     err: ['Oberkörper schwankt stark mit', 'Knie durchgedrückt'],
     mus: 'Hüfte, unterer Rücken, Bauch',
     easy: 'Das Becken nur von links nach rechts schieben statt zu kreisen.',
-    k: [P(STF, { ...HIPS, x: 112, t: 184, l1: 3, s1: 3, l2: 9, s2: 9 }), P(STF, { ...HIPS, x: 128, t: 176, l1: -9, s1: -9, l2: -3, s2: -3 })],
+    loop: true, highlight: 'torso',
+    k: hipCircle,
   },
   {
     id: 'seitneigung_stand', n: 'Seitneigung im Stand', cat: ['warm', 'stretch'], lvl: 1, met: 2.3, tp: 4, sided: true,
@@ -315,7 +342,7 @@ const list = [
     err: ['Bein zu hoch (Hohlkreuz)', 'Becken kippt zur Seite'],
     mus: 'Rückenstrecker, tiefe Bauchmuskeln, Po',
     easy: 'Nur den Arm oder nur das Bein strecken.',
-    k: [P(QD), P(QD, { a1: 97, f1: 97, l2: 268, s2: 268, h: 100 })],
+    k: [P(QD), P(QD, { a1: 97, f1: 97, l2: -92, s2: -92, h: 100 })],
   },
   {
     id: 'good_morning', n: 'Hüftbeuge (Good Morning)', cat: ['back', 'glutes'], lvl: 2, met: 3.0, tp: 4,
@@ -623,7 +650,7 @@ const list = [
     err: ['Mit Druck nach unten zwingen', 'Den Atem anhalten'],
     mus: 'Rücken, Schultern, Hüfte (Entspannung)',
     easy: 'Ein Kissen zwischen Po und Fersen oder unter die Stirn legen.',
-    k: [P(CHILD), P(CHILD, { c: 3 })],
+    k: [P(CHILD, { t: 180, h: 180, a1: 10, f1: 30, a2: 10, f2: 30 }), P(CHILD)],
   },
   {
     id: 'sphinx', n: 'Sphinx (sanfte Rückbeuge)', cat: ['yoga', 'back', 'posture'], lvl: 1, met: 2.0, tp: 6,
@@ -675,7 +702,7 @@ const list = [
     err: ['Rundrücken', 'Zu stark ziehen'],
     mus: 'Gesäßmuskeln, Hüftrotatoren',
     easy: 'Den Knöchel nur auf das Schienbein legen und aufrecht bleiben.',
-    k: [P(SITF, { thS2: 0.9, l2: 70, s2: -95 }), P(SITF, { thS2: 0.9, l2: 72, s2: -95, a1: -2, f1: 30 })],
+    k: [P(SITF), P(SITF, { thS2: 0.9, l2: 70, s2: -95 })],
   },
   {
     id: 'einbeinstand', n: 'Einbeinstand mit Halt', cat: ['balance', 'legs'], lvl: 1, met: 2.3, tp: 6, sided: true,
@@ -758,7 +785,7 @@ const list = [
     err: ['Hohlkreuz', 'Knie wandert nach außen'],
     mus: 'Vorderer Oberschenkel, Hüftbeuger',
     easy: 'Im Liegen auf der Seite ausführen oder ein Handtuch um den Fuß legen.',
-    k: [P(ST, { l1: -5, s1: 175, p1: 270, a1: -5, f1: 5, a2: 80, f2: 90, prop: 'wall', wall: 176 }), P(ST, { l1: -8, s1: 178, p1: 270, a1: -7, f1: 3, a2: 80, f2: 90, prop: 'wall', wall: 176 })],
+    k: [P(ST, { a2: 80, f2: 90, prop: 'wall', wall: 176 }), P(ST, { l1: -5, s1: 175, p1: 270, a1: -5, f1: 5, a2: 80, f2: 90, prop: 'wall', wall: 176 })],
   },
   {
     id: 'seitbeuge_sitz', n: 'Seitneigung im Sitzen', cat: ['stretch', 'office'], lvl: 1, met: 1.8, tp: 5, sided: true,
@@ -768,7 +795,7 @@ const list = [
     err: ['Nach vorn kippen', 'Ruckartig'],
     mus: 'Seitlicher Rumpf, breiter Rückenmuskel',
     easy: 'Hand auf den Kopf legen statt den Arm zu strecken.',
-    k: [P(SITF), P(SITF, { t: 166, h: 162, a1: 165, f1: 155, a2: 15, f2: 10 })],
+    k: [P(SITF), P(SITF, { t: 166, h: 162, a1: -195, f1: -205, a2: 15, f2: 10 })],
   },
   {
     id: 'bein_strecken_sitz', n: 'Bein strecken im Sitzen', cat: ['office', 'legs'], lvl: 1, met: 2.3, tp: 3, sided: true,
@@ -821,6 +848,37 @@ const list = [
     k: [P(SUPF), P(SUPF, { c: -1 })],
   },
 ];
+
+// Vergrößerung und Hervorhebung, wo die automatische Erkennung nicht reicht
+const OVERRIDES = {
+  kinn_rueckzug: { zoom: Z.headSit, highlight: 'head' },
+  ja_nicken: { zoom: Z.headSit, highlight: 'head' },
+  nacken_isometrie: { zoom: Z.headSit, highlight: ['head', 'arm'] },
+  kopf_neigen: { zoom: Z.headSitF, highlight: 'head' },
+  kopf_drehen: { zoom: Z.headSitF, highlight: 'head' },
+  nacken_dehnung: { zoom: Z.upSitF, highlight: ['head', 'arm2'] },
+  schulter_heben: { zoom: Z.upSitF, highlight: 'shoulders' },
+  atem_46: { zoom: Z.upSitF, highlight: 'torso' },
+  schulterblatt_zusammen: { zoom: Z.upSide, highlight: 'arms' },
+  rudern_stehend: { zoom: Z.upSide, highlight: 'arms' },
+  arme_hinter_ruecken: { zoom: Z.upSide, highlight: 'arms' },
+  bizeps: { zoom: Z.upSide, highlight: 'arms' },
+  w_y_arme: { zoom: Z.upFront, highlight: 'arms' },
+  seitheben: { zoom: Z.upFront, highlight: 'arms' },
+  ueberkopf: { zoom: Z.upFront, highlight: 'arms' },
+  armkreise: { zoom: Z.upFront, highlight: 'arms' },
+  beckenkippen: { zoom: Z.floorMid, highlight: 'torso' },
+  brustdehnung_tuer: { highlight: ['arm', 'torso'] },
+  dead_bug: { highlight: ['arm', 'leg2'] },
+  vierfuss_arm_bein: { highlight: ['arm', 'leg2'] }, kind: { highlight: 'torso' },
+  plank_wand: { highlight: 'torso' }, plank_knie: { highlight: 'torso' }, plank: { highlight: 'torso' },
+  sphinx: { highlight: 'torso' }, vorbeuge_stuhl: { highlight: 'torso' }, hund_wand: { highlight: 'torso' },
+  bauchatmung: { zoom: Z.floorMid, highlight: 'torso' },
+};
+for (const e of list) {
+  if (!e.tip && TIPS[e.id]) e.tip = TIPS[e.id];
+  Object.assign(e, OVERRIDES[e.id] || {});
+}
 
 export const EXERCISES = Object.fromEntries(list.map((e) => [e.id, e]));
 export const EXERCISE_LIST = list;

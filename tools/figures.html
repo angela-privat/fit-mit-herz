@@ -17,8 +17,10 @@ for (const e of EXERCISE_LIST) {
   const c = document.createElement('div'); c.className = 'c';
   c.innerHTML = `<b>${e.id}</b>`;
   const f = document.createElement('div'); f.className = 'f';
-  f.appendChild(createFigure(e.k, { pose: 'start' }).svg);
-  f.appendChild(createFigure(e.k, { loop: e.loop }).svg);
+  f.appendChild(createFigure(e.k, { pose: 'start', zoom: e.zoom, highlight: e.highlight }).svg);
+  f.appendChild(createFigure(e.k, { loop: e.loop, zoom: e.zoom, highlight: e.highlight }).svg);
   c.appendChild(f); g.appendChild(c);
+  const hl = (f.lastChild.getAttribute('class').match(/hl-\w+/g) || ['–']).join(' ');
+  c.querySelector('b').textContent += '  · ' + hl.replace(/hl-/g, '');
 }
 </script></body></html>

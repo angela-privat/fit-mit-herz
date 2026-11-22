@@ -636,7 +636,7 @@ function renderSettings() {
         <button class="btn btn-ghost" id="a-health">${ICON.heart} Gesundheits-Check wiederholen</button>
         <button class="btn btn-danger-ghost" id="a-reset">${ICON.trash} Alle Daten löschen</button>
       </div>
-      <p class="muted small center">Fit mit Herz · Version 1.4 · funktioniert auch offline<br>Stimme der Trainerin: „Kerstin“ aus dem Piper-Projekt (frei lizenziert, CC0)</p>
+      <p class="muted small center">Fit mit Herz · Version 2.0 · funktioniert auch offline<br>Stimme der Trainerin: „Kerstin“ aus dem Piper-Projekt (frei lizenziert, CC0)</p>
     </section>`;
 
   $('#p-save').addEventListener('click', () => {
