@@ -150,6 +150,10 @@ main#view { max-width: 640px; margin: 0 auto; padding: 16px; }
 .seg button.on { background: var(--surface); color: var(--coral-d); box-shadow: var(--shadow); }
 .seg.wide { display: flex; } .seg.wide button { flex: 1; }
 
+.voicebox { display: grid; gap: 12px; padding: 12px 0 4px; border-bottom: 1px solid var(--line); }
+.voicebox select { font: inherit; color: var(--ink); background: var(--bg); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; min-height: 52px; width: 100%; }
+.voicebox input[type=range] { width: 100%; accent-color: var(--coral); height: 32px; }
+.voicebox output { color: var(--ink); font-weight: 700; margin-left: 6px; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .switch:last-child { border-bottom: 0; }
 .switch small { display: block; color: var(--muted); font-size: .85rem; }
@@ -389,16 +393,39 @@ body.playing { overflow: hidden; }
 @media (max-height: 700px) { .pl-timer { font-size: 3.2rem; } .pl-fig { max-height: 30vh; } .ctl { width: 60px; height: 60px; } .ctl-main { width: 78px; height: 78px; } }
 
 /* ---------- Übungsfiguren ---------- */
-.figure { overflow: visible; }
-.fg { stroke: var(--fig); stroke-width: 9; stroke-linecap: round; fill: none; }
-.fg.far { stroke: var(--fig-far); }
-.fg.torso { stroke-width: 15; }
-.fg.torso-bar { stroke-width: 11; }
-.fg.neck { stroke-width: 7; }
-.fg.ft { stroke-width: 7; }
-.fig-head { fill: var(--fig); }
-.fig-hair { fill: var(--hair); }
-.fig-eye { fill: #fff; }
+.figure {
+  overflow: visible;
+  --skin: #f0b896; --skin-far: #cf9375;
+  --shirt: #e2694a; --shirt-far: #a94a33;
+  --legs: #5b3e60; --legs-far: #3d2a41;
+  --shoe: #2f2430; --fhair: #6b3a2a; --arrow: #e89a1c;
+}
+@media (prefers-color-scheme: dark) {
+  .figure { --legs: #8f6aa0; --legs-far: #634a70; --shoe: #e9dcd6; --fhair: #b0705a; --arrow: #ffc24d; }
+}
+.figure line, .figure path { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.f-skin { stroke: var(--skin); } .f-skin.far { stroke: var(--skin-far); }
+.f-shirt { stroke: var(--shirt); } .f-shirt.far { stroke: var(--shirt-far); }
+.f-legs { stroke: var(--legs); } .f-legs.far { stroke: var(--legs-far); }
+.f-shoe { stroke: var(--shoe); stroke-width: 8; }
+.f-ua { stroke-width: 10; } .f-fa { stroke-width: 9; } .f-sleeve { stroke-width: 13; }
+.f-th { stroke-width: 15; } .f-shin { stroke-width: 11.5; }
+.figure .f-torso { stroke-width: 27; } .figure .f-waist { stroke-width: 27; }
+.f-shbar { stroke-width: 14; } .f-hipbar { stroke-width: 15; }
+.figure .f-torsoF { fill: var(--shirt); stroke-width: 9; }
+.f-neck { stroke-width: 9; }
+.f-skinfill { fill: var(--skin); } .f-skinfill.far { fill: var(--skin-far); }
+.f-hairfill { fill: var(--fhair); }
+.f-eye { fill: #3a2a30; }
+.figure .f-mouth { stroke: #a2452f; stroke-width: 1.5; }
+.fig-ghost { opacity: .2; }
+.figure .f-arrow { stroke: var(--arrow); stroke-width: 4.5; stroke-dasharray: 0.5 7.5; }
+.f-arrowhead { fill: var(--arrow); }
+.startziel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; margin-top: 10px; }
+.startziel figure { margin: 0; background: var(--bg2); border-radius: 14px; padding: 4px; text-align: center; }
+.startziel figcaption { font-size: .8rem; font-weight: 700; color: var(--muted); padding-bottom: 4px; }
+.startziel .sz-arrow { font-size: 1.5rem; color: var(--sun); }
+.startziel svg { width: 100%; height: auto; display: block; }
 .fig-ground { stroke: var(--prop); stroke-width: 2; opacity: .6; }
 .fig-mat { fill: var(--mat); }
 .fig-chair { fill: var(--prop); }

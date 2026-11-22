@@ -91,80 +91,148 @@ function drawProps(svg, pose) {
   }
 }
 
-/** Erstellt eine Figur. frames: Liste von Posen (Ping-Pong-Animation). */
-export function createFigure(frames, opts = {}) {
-  const svg = el('svg', { viewBox: '0 0 240 210', class: 'figure', role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
-  drawProps(svg, frames[0]);
-  const first = solve(frames[0]);
-  const front = first.front;
-  const g = el('g', { class: 'fig-body' }, svg);
+let uid = 0;
+const setL = (ln, a, b) => {
+  ln.setAttribute('x1', r1(a[0])); ln.setAttribute('y1', r1(a[1]));
+  ln.setAttribute('x2', r1(b[0])); ln.setAttribute('y2', r1(b[1]));
+};
+const setC = (c, pt) => { c.setAttribute('cx', r1(pt[0])); c.setAttribute('cy', r1(pt[1])); };
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+
+/** Legt alle Körperteile an (Reihenfolge = Zeichenreihenfolge: hinten → vorn). */
+function buildBody(g, front) {
   const L = (cls) => el('line', { class: cls }, g);
+  const C = (cls, r) => el('circle', { class: cls, r }, g);
+  const P = (cls) => el('path', { class: cls }, g);
   const parts = {};
-  if (!front) {
-    parts.ua2 = L('fg far'); parts.fa2 = L('fg far');
-    parts.th2 = L('fg far'); parts.sh2 = L('fg far'); parts.ft2 = L('fg far ft');
-  } else {
-    parts.th2 = L('fg'); parts.sh2 = L('fg'); parts.ft2 = L('fg ft');
-    parts.th1 = L('fg'); parts.sh1 = L('fg'); parts.ft1 = L('fg ft');
-    parts.hipbar = L('fg torso-bar');
-  }
-  parts.torso = el('path', { class: 'fg torso' }, g);
-  if (front) parts.shbar = L('fg torso-bar');
-  parts.neck = L('fg neck');
-  parts.tail = el('circle', { r: 5.5, class: 'fig-hair' }, g);
-  parts.head = el('circle', { r: LEN.head, class: 'fig-head' }, g);
-  if (front) {
-    parts.hair = el('path', { class: 'fig-hair' }, g);
-    parts.eye1 = el('circle', { r: 1.6, class: 'fig-eye' }, g);
-    parts.eye2 = el('circle', { r: 1.6, class: 'fig-eye' }, g);
-  } else {
-    parts.nose = el('circle', { r: 2.6, class: 'fig-head' }, g);
-  }
-  if (!front) {
-    parts.th1 = L('fg'); parts.sh1 = L('fg'); parts.ft1 = L('fg ft');
-  }
-  parts.ua1 = L('fg'); parts.fa1 = L('fg');
-  if (front) { parts.ua2 = L('fg'); parts.fa2 = L('fg'); }
-
-  const setL = (ln, a, b) => {
-    ln.setAttribute('x1', r1(a[0])); ln.setAttribute('y1', r1(a[1]));
-    ln.setAttribute('x2', r1(b[0])); ln.setAttribute('y2', r1(b[1]));
+  const arm = (i, far) => {
+    const f = far ? ' far' : '';
+    parts['ua' + i] = L('f-skin f-ua' + f);
+    parts['sl' + i] = L('f-shirt f-sleeve' + f);
+    parts['fa' + i] = L('f-skin f-fa' + f);
+    parts['hd' + i] = C('f-skinfill' + f, 4.6);
   };
-  const setC = (c, pt) => { c.setAttribute('cx', r1(pt[0])); c.setAttribute('cy', r1(pt[1])); };
-
-  function render(pose) {
-    const s = solve(pose);
-    setL(parts.ua1, s.S1, s.E1); setL(parts.fa1, s.E1, s.W1);
-    setL(parts.ua2, s.S2, s.E2); setL(parts.fa2, s.E2, s.W2);
-    setL(parts.th1, s.H1, s.K1); setL(parts.sh1, s.K1, s.A1); setL(parts.ft1, s.A1, s.T1);
-    setL(parts.th2, s.H2, s.K2); setL(parts.sh2, s.K2, s.A2); setL(parts.ft2, s.A2, s.T2);
-    parts.torso.setAttribute('d', `M${r1(s.hip[0])} ${r1(s.hip[1])} Q${r1(s.mid[0])} ${r1(s.mid[1])} ${r1(s.sh[0])} ${r1(s.sh[1])}`);
-    if (parts.shbar) setL(parts.shbar, s.S1, s.S2);
-    if (parts.hipbar) setL(parts.hipbar, s.H1, s.H2);
-    setL(parts.neck, s.sh, s.nk);
-    setC(parts.head, s.head);
-    if (s.front) {
-      // Haar-Kappe oben auf dem Kopf, Augen nach Blickrichtung n
-      const hr = LEN.head + 1.5;
-      const lft = [s.head[0] - s.right[0] * hr, s.head[1] - s.right[1] * hr];
-      const rgt = [s.head[0] + s.right[0] * hr, s.head[1] + s.right[1] * hr];
-      parts.hair.setAttribute('d', `M${r1(lft[0])} ${r1(lft[1])} A${hr} ${hr} 0 0 1 ${r1(rgt[0])} ${r1(rgt[1])} Z`);
-      const n = s.p.n || 0;
-      const e = (side) => [
-        s.head[0] + s.right[0] * (n * 5 + side * 3.8) - s.axis[0] * -1,
-        s.head[1] + s.right[1] * (n * 5 + side * 3.8) - s.axis[1] * -1,
-      ];
-      setC(parts.eye1, e(-1)); setC(parts.eye2, e(1));
-      const top = [s.head[0] + s.axis[0] * 12, s.head[1] + s.axis[1] * 12];
-      setC(parts.tail, top);
-    } else {
-      setC(parts.nose, [s.head[0] + s.faceDir[0] * 10.5, s.head[1] + s.faceDir[1] * 10.5 + s.axis[1] * -0]);
-      setC(parts.tail, [s.head[0] - s.faceDir[0] * 11 + s.axis[0] * 3, s.head[1] - s.faceDir[1] * 11 + s.axis[1] * 3]);
-    }
+  const leg = (i, far) => {
+    const f = far ? ' far' : '';
+    parts['th' + i] = L('f-legs f-th' + f);
+    parts['sh' + i] = L('f-legs f-shin' + f);
+    parts['ft' + i] = L('f-shoe' + f);
+  };
+  if (!front) { arm(2, true); leg(2, true); } else { leg(1); leg(2); }
+  parts.torso = P(front ? 'f-shirt f-torsoF' : 'f-shirt f-torso');
+  if (front) parts.hipbar = L('f-legs f-hipbar');
+  if (!front) parts.waist = P('f-legs f-waist');
+  if (front) parts.shbar = L('f-shirt f-shbar');
+  parts.neck = L('f-skin f-neck');
+  parts.tail = C('f-hairfill', 6.5);
+  parts.hair = C('f-hairfill', 13);
+  parts.head = C('f-skinfill', 12);
+  if (front) {
+    parts.eye1 = C('f-eye', 1.6); parts.eye2 = C('f-eye', 1.6); parts.mouth = P('f-mouth');
+  } else {
+    parts.nose = C('f-skinfill', 3); parts.eye = C('f-eye', 1.6);
   }
+  if (!front) { leg(1); arm(1); } else { arm(1); arm(2); }
+  return parts;
+}
 
+function renderBody(parts, s) {
+  for (const i of [1, 2]) {
+    const S = s['S' + i], E = s['E' + i], W = s['W' + i];
+    setL(parts['ua' + i], S, E); setL(parts['sl' + i], S, mix(S, E, 0.42)); setL(parts['fa' + i], E, W); setC(parts['hd' + i], W);
+    setL(parts['th' + i], s['H' + i], s['K' + i]); setL(parts['sh' + i], s['K' + i], s['A' + i]); setL(parts['ft' + i], s['A' + i], s['T' + i]);
+  }
+  if (s.front) {
+    // Oberteil als Trapez: breite Schultern, schmalere Taille
+    const out = (p, q, by) => { const dx = p[0] - q[0], dy = p[1] - q[1], l = Math.hypot(dx, dy) || 1; return [p[0] + dx / l * by, p[1] + dy / l * by]; };
+    const a = out(s.S1, s.S2, 2), b = out(s.S2, s.S1, 2), c = out(s.H2, s.H1, 1), e = out(s.H1, s.H2, 1);
+    parts.torso.setAttribute('d', `M${r1(a[0])} ${r1(a[1])} L${r1(b[0])} ${r1(b[1])} L${r1(c[0])} ${r1(c[1])} L${r1(e[0])} ${r1(e[1])} Z`);
+  } else {
+    parts.torso.setAttribute('d', `M${r1(s.hip[0])} ${r1(s.hip[1])} Q${r1(s.mid[0])} ${r1(s.mid[1])} ${r1(s.sh[0])} ${r1(s.sh[1])}`);
+  }
+  if (parts.waist) {
+    // unteres Stück des Rumpfes in Hosenfarbe (Hüfte)
+    const t = 0.24, c = mix(s.hip, s.mid, t);
+    const q = mix(mix(s.hip, s.mid, t), mix(s.mid, s.sh, t), t);
+    parts.waist.setAttribute('d', `M${r1(s.hip[0])} ${r1(s.hip[1])} Q${r1(c[0])} ${r1(c[1])} ${r1(q[0])} ${r1(q[1])}`);
+  }
+  if (parts.shbar) setL(parts.shbar, s.S1, s.S2);
+  if (parts.hipbar) setL(parts.hipbar, s.H1, s.H2);
+  setL(parts.neck, s.sh, s.nk);
+  setC(parts.head, s.head);
+  if (s.front) {
+    setC(parts.hair, [s.head[0] + s.axis[0] * 2.5, s.head[1] + s.axis[1] * 2.5]);
+    setC(parts.tail, [s.head[0] + s.axis[0] * 13, s.head[1] + s.axis[1] * 13]);
+    const n = s.p.n || 0;
+    const at = (x, y) => [s.head[0] + s.right[0] * x + s.axis[0] * y, s.head[1] + s.right[1] * x + s.axis[1] * y];
+    setC(parts.eye1, at(n * 5 - 4, 1)); setC(parts.eye2, at(n * 5 + 4, 1));
+    const m1 = at(n * 5 - 3.2, -4.5), m2 = at(n * 5 + 3.2, -4.5), mc = at(n * 5, -7);
+    parts.mouth.setAttribute('d', `M${r1(m1[0])} ${r1(m1[1])} Q${r1(mc[0])} ${r1(mc[1])} ${r1(m2[0])} ${r1(m2[1])}`);
+  } else {
+    setC(parts.hair, [s.head[0] - s.faceDir[0] * 2.5 + s.axis[0] * 2, s.head[1] - s.faceDir[1] * 2.5 + s.axis[1] * 2]);
+    setC(parts.tail, [s.head[0] - s.faceDir[0] * 12.5 + s.axis[0] * 3, s.head[1] - s.faceDir[1] * 12.5 + s.axis[1] * 3]);
+    setC(parts.nose, [s.head[0] + s.faceDir[0] * 11, s.head[1] + s.faceDir[1] * 11]);
+    setC(parts.eye, [s.head[0] + s.faceDir[0] * 6 + s.axis[0] * 2, s.head[1] + s.faceDir[1] * 6 + s.axis[1] * 2]);
+  }
+}
+
+/** Bewegungspfeil: zeigt, welcher Körperteil sich wohin bewegt. */
+function drawArrow(svg, frames, id) {
+  if (frames.length < 2) return;
+  const a = solve(frames[0]), b = solve(frames[frames.length - 1]);
+  const m = frames.length > 2 ? solve(frames[1]) : null;
+  const keys = ['W1', 'W2', 'T1', 'T2', 'K1', 'K2', 'head', 'hip', 'E1', 'E2'];
+  let best = null, bd = 0;
+  for (const k of keys) {
+    const dd = Math.hypot(b[k][0] - a[k][0], b[k][1] - a[k][1]);
+    if (dd > bd + 2) { bd = dd; best = k; }
+  }
+  if (!best || bd < 16) return;
+  const A = a[best], B = b[best];
+  let ctrl;
+  if (m) ctrl = [2 * m[best][0] - (A[0] + B[0]) / 2, 2 * m[best][1] - (A[1] + B[1]) / 2];
+  else {
+    // leicht gebogen, vom Körper weg
+    const mid = mix(A, B, 0.5), dx = B[0] - A[0], dy = B[1] - A[1];
+    let px = -dy / bd, py = dx / bd;
+    const away = [mid[0] - b.sh[0], mid[1] - b.sh[1]];
+    if (px * away[0] + py * away[1] < 0) { px = -px; py = -py; }
+    ctrl = [mid[0] + px * bd * 0.22, mid[1] + py * bd * 0.22];
+  }
+  // Enden etwas kürzen, damit der Pfeil nicht auf der Hand/dem Fuß liegt
+  const trim = (p, toward, by) => { const l = Math.hypot(toward[0] - p[0], toward[1] - p[1]) || 1; return [p[0] + (toward[0] - p[0]) / l * by, p[1] + (toward[1] - p[1]) / l * by]; };
+  const A2 = trim(A, ctrl, 9), B2 = trim(B, ctrl, 11);
+  el('path', { class: 'f-arrow', d: `M${r1(A2[0])} ${r1(A2[1])} Q${r1(ctrl[0])} ${r1(ctrl[1])} ${r1(B2[0])} ${r1(B2[1])}`, 'marker-end': `url(#${id})` }, svg);
+}
+
+/**
+ * Erstellt eine Figur. frames: Liste von Posen (Ping-Pong-Animation).
+ * opts: { animate, tempo, label, pose: 'start'|'end' (für Standbilder), arrow: true, ghost: true }
+ */
+export function createFigure(frames, opts = {}) {
+  const id = 'ah' + (++uid);
+  const svg = el('svg', { viewBox: '0 0 240 210', class: 'figure', role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
+  const defs = el('defs', {}, svg);
+  const mk = el('marker', { id, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 3.4, markerHeight: 3.4, orient: 'auto-start-reverse' }, defs);
+  el('path', { d: 'M0 0 L10 5 L0 10 Z', class: 'f-arrowhead' }, mk);
+  drawProps(svg, frames[0]);
+  const front = solve(frames[0]).front;
+  const multi = frames.length > 1;
+  const showGhost = multi && opts.ghost !== false && !opts.pose;
+  const last = frames[frames.length - 1];
+
+  if (showGhost) {
+    // blasses Zielbild bei Animation, blasses Startbild bei Standbild
+    const gg = el('g', { class: 'fig-ghost' }, svg);
+    renderBody(buildBody(gg, front), solve(opts.animate ? last : frames[0]));
+  }
+  const g = el('g', { class: 'fig-body' }, svg);
+  const parts = buildBody(g, front);
+  if (multi && opts.arrow !== false && !opts.pose) drawArrow(svg, frames, id);
+
+  const render = (pose) => renderBody(parts, solve(pose));
   const fig = {
-    svg, frames, tempo: opts.tempo || 4, paused: false, t0: performance.now(), pausedAt: 0,
+    svg, frames, tempo: (opts.tempo || 4) * 1.25, paused: false, t0: performance.now(), pausedAt: 0,
     render,
     setPaused(v) {
       if (v === fig.paused) return;
@@ -173,8 +241,8 @@ export function createFigure(frames, opts = {}) {
       fig.paused = v;
     },
   };
-  render(frames[frames.length > 1 ? frames.length - 1 : 0]);
-  if (opts.animate && frames.length > 1) register(fig);
+  render(opts.pose === 'start' ? frames[0] : last);
+  if (opts.animate && multi) register(fig);
   return fig;
 }
 
@@ -199,8 +267,8 @@ function poseAt(fig, now) {
   const n = fr.length - 1;
   const cyc = ((now - fig.t0) / 1000 / fig.tempo) % 1; // 0..1 hin und zurück
   let x = cyc < 0.5 ? cyc * 2 : 2 - cyc * 2; // 0..1..0
-  // kleine Pausen an den Endpunkten
-  x = Math.min(1, Math.max(0, (x - 0.08) / 0.84));
+  // kurze Haltepausen an Start und Ziel
+  x = Math.min(1, Math.max(0, (x - 0.12) / 0.76));
   const pos = x * n;
   const i = Math.min(n - 1, Math.floor(pos));
   const u = ease(pos - i);

@@ -20,18 +20,10 @@ function beep(freq = 880, dur = 0.12, vol = 0.18) {
   } catch { /* kein Ton möglich */ }
 }
 
-let voice = null;
-function say(text) {
-  if (!store.get().settings.voice || !('speechSynthesis' in window)) return;
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'de-DE'; u.rate = 0.95;
-    voice = voice || speechSynthesis.getVoices().find((v) => v.lang && v.lang.startsWith('de'));
-    if (voice) u.voice = voice;
-    speechSynthesis.speak(u);
-  } catch { /* egal */ }
-}
+import { say as speak, PHRASES, stopVoice } from './voice.js';
+// Neue Ansage unterbricht die vorherige, damit nichts hinterherhinkt
+const say = (text) => speak(text, { interrupt: true });
+const sayMore = (text) => speak(text);
 
 const vibrate = (p) => { if (store.get().settings.vibrate && navigator.vibrate) try { navigator.vibrate(p); } catch { /* */ } };
 
@@ -177,13 +169,21 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     P.remaining = phase === 'work' ? s.work : phase === 'rest' ? s.rest : 5;
     P.endAt = performance.now() + P.remaining * 1000;
     P.sideSwitched = false;
+    P.saidHalf = false;
+    P.saidTen = false;
     P.lastBeep = null;
-    if (phase === 'work') {
+    const ex0 = EXERCISES[s.id];
+    if (phase === 'ready') {
+      say(PHRASES.ready(ex0.n));
+    } else if (phase === 'work') {
       beep(990, 0.18); vibrate(120);
-      say(EXERCISES[s.id].n);
+      const prev = P.w.steps[P.i - 1];
+      if (P.w.kind === 'day' && prev && prev.section !== s.section) { say(PHRASES.section(s.section)); sayMore(PHRASES.start(ex0.n)); }
+      else say(PHRASES.start(ex0.n));
+      if (store.get().settings.voiceCues !== false) sayMore(ex0.pos);
     } else if (phase === 'rest' && nextStep()) {
       beep(520, 0.15);
-      say('Pause. Als Nächstes: ' + EXERCISES[nextStep().id].n);
+      say(PHRASES.rest(EXERCISES[nextStep().id].n));
     }
     renderStep();
   }
@@ -217,7 +217,12 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
       if (sec <= 3 && sec >= 1 && P.lastBeep !== sec && Math.ceil(prev) !== sec) { P.lastBeep = sec; beep(740, 0.09); }
       const s = step();
       if (P.phase === 'work' && EXERCISES[s.id].sided && !P.sideSwitched && P.remaining <= s.work / 2) {
-        P.sideSwitched = true; beep(880, 0.12); vibrate([80, 60, 80]); say('Seite wechseln');
+        P.sideSwitched = true; beep(880, 0.12); vibrate([80, 60, 80]); say(PHRASES.side());
+      }
+      if (P.phase === 'work' && s.work >= 30) {
+        const sided = EXERCISES[s.id].sided;
+        if (!sided && !P.saidHalf && P.remaining <= s.work / 2 && P.remaining > 12) { P.saidHalf = true; sayMore(PHRASES.half()); }
+        if (!P.saidTen && P.remaining <= 10.5 && P.remaining > 9) { P.saidTen = true; sayMore(PHRASES.ten()); }
       }
       if (P.remaining <= 0) advance();
       else renderTime();
@@ -230,7 +235,7 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     if (v) P.endAt = performance.now() + P.remaining * 1000;
     P.running = v;
     if (P.fig) P.fig.setPaused(!v);
-    if (!v) say('Pause');
+    if (!v) say(PHRASES.pause());
     renderTime();
   }
 
@@ -275,7 +280,7 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
 
   async function safetyStop() {
     setRunning(false);
-    say('Bitte stoppe jetzt.');
+    say(PHRASES.stop());
     const r = await dialog({
       title: 'Bitte hör jetzt auf',
       tone: 'danger',
@@ -319,7 +324,7 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     const fresh = checkAchievements(store.get());
     store.save();
     await store.flush();
-    if (completed) { beep(660, 0.15); setTimeout(() => beep(880, 0.15), 180); setTimeout(() => beep(1100, 0.3), 360); say('Geschafft! Super gemacht.'); vibrate([100, 80, 100, 80, 200]); }
+    if (completed) { beep(660, 0.15); setTimeout(() => beep(880, 0.15), 180); setTimeout(() => beep(1100, 0.3), 360); say(PHRASES.done()); vibrate([100, 80, 100, 80, 200]); }
     keepAwake(false);
     showSummary(session, fresh, stop);
   }

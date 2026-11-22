@@ -4,6 +4,7 @@ import { EXERCISES, EXERCISE_LIST, CATEGORIES, doseText, levelName } from './exe
 import { DAYS, buildDay, buildProgram, buildSingle, PROGRAMS, STAGES, VARIANTS, SECTION_NAMES, weekdayOf, weekIndex, mondayOf } from './plans.js';
 import { createFigure } from './figures.js';
 import { startWorkout, isPlaying } from './trainer.js';
+import { germanVoices, say, PHRASES } from './voice.js';
 import {
   currentStreak, longestStreak, weekStats, totals, weightSummary, weeklyWeights, stageAdvice,
   ACHIEVEMENTS, checkAchievements, quoteOfDay, greeting, bmiText,
@@ -39,6 +40,12 @@ function hydrateFigures(root = view()) {
     if (!ex || el.firstChild) return;
     const fig = createFigure(ex.k, { animate: el.hasAttribute('data-anim'), tempo: ex.tp, label: ex.n });
     el.appendChild(fig.svg);
+  });
+  root.querySelectorAll('[data-figp]').forEach((el) => {
+    const ex = EXERCISES[el.dataset.figp];
+    if (!ex || el.firstChild) return;
+    const pose = el.dataset.pose;
+    el.appendChild(createFigure(ex.k, { pose, label: `${ex.n} – ${pose === 'start' ? 'Start' : 'Ziel'}` }).svg);
   });
 }
 
@@ -388,6 +395,11 @@ function renderExercise(id) {
     <a class="backlink" href="javascript:history.back()">${ICON.back} Zurück</a>
     <section class="card ex-detail">
       <div class="ex-fig" data-fig="${e.id}" data-anim></div>
+      <div class="startziel">
+        <figure><figcaption>1 · Start</figcaption><div data-figp="${e.id}" data-pose="start"></div></figure>
+        <span class="sz-arrow" aria-hidden="true">➜</span>
+        <figure><figcaption>2 · Ziel</figcaption><div data-figp="${e.id}" data-pose="end"></div></figure>
+      </div>
       <h1>${esc(e.n)}</h1>
       <div class="chips">${e.cat.map((c) => `<span class="chip static">${CATEGORIES[c]}</span>`).join('')}<span class="chip static lvl lvl${e.lvl}">Schwierigkeit: ${levelName(e.lvl)}</span></div>
       <p class="dose">${ICON.clock} ${esc(doseText(e, st.plan.stage))}${e.sided ? ' (Seite wechseln)' : ''}</p>
@@ -592,7 +604,15 @@ function renderSettings() {
     </section>
     <section class="card"><h2>Training</h2>
       ${toggle('sound', 'Signaltöne', 'Piepen bei Start, Ende und den letzten 3 Sekunden')}
-      ${toggle('voice', 'Sprachansage', 'Nennt die nächste Übung und den Seitenwechsel')}
+      ${toggle('voice', 'Sprachansage', 'Begleitet dich durchs Training und motiviert dich')}
+      ${toggle('voiceCues', 'Haltungstipp vorlesen', 'Zu jeder Übung ein kurzer Hinweis zur richtigen Haltung')}
+      <div class="voicebox">
+        <label class="field"><span>Stimme</span><select id="v-name"></select></label>
+        <label class="field"><span>Sprechtempo <output id="v-rate-o"></output></span><input type="range" id="v-rate" min="0.8" max="1.25" step="0.05" value="${s.voiceRate ?? 1}"></label>
+        <label class="field"><span>Tonhöhe <output id="v-pitch-o"></output></span><input type="range" id="v-pitch" min="0.8" max="1.4" step="0.05" value="${s.voicePitch ?? 1.1}"></label>
+        <button class="btn btn-ghost full" id="v-test">${ICON.sound} Stimme anhören</button>
+        <p class="muted small">Tipp: Stimmen mit „Online“, „Natural“ oder „Netzwerk“ im Namen klingen meist am natürlichsten. Welche Stimmen es gibt, hängt von deinem Gerät ab.</p>
+      </div>
       ${toggle('vibrate', 'Vibration', 'nur auf dem Handy')}
       ${toggle('easyDefault', 'Leichtere Varianten immer anzeigen', 'Empfohlen für die ersten Wochen oder an schweren Tagen')}
     </section>
@@ -627,6 +647,25 @@ function renderSettings() {
     setStage(+b.dataset.v); renderSettings();
   });
   view().querySelectorAll('[data-set]').forEach((inp) => inp.addEventListener('change', () => { s[inp.dataset.set] = inp.checked; store.save(); }));
+  // Stimme
+  const fillVoices = () => {
+    const sel = $('#v-name'); if (!sel) return;
+    const list = germanVoices();
+    sel.innerHTML = list.length
+      ? list.map((v) => `<option value="${esc(v.name)}" ${v.name === s.voiceName ? 'selected' : ''}>${esc(v.name)}${v.localService === false ? ' (online)' : ''}</option>`).join('')
+      : '<option value="">Standardstimme des Geräts</option>';
+    if (!s.voiceName && list[0]) sel.value = list[0].name;
+  };
+  fillVoices();
+  try { speechSynthesis.addEventListener('voiceschanged', fillVoices, { once: true }); } catch { /* */ }
+  const showVals = () => { $('#v-rate-o').textContent = n1($('#v-rate').value) + '×'; $('#v-pitch-o').textContent = n1($('#v-pitch').value); };
+  showVals();
+  $('#v-name').addEventListener('change', (e) => { s.voiceName = e.target.value; store.save(); say(PHRASES.test(), { interrupt: true, force: true }); });
+  $('#v-rate').addEventListener('input', (e) => { s.voiceRate = +e.target.value; showVals(); store.save(); });
+  $('#v-pitch').addEventListener('input', (e) => { s.voicePitch = +e.target.value; showVals(); store.save(); });
+  $('#v-rate').addEventListener('change', () => say(PHRASES.test(), { interrupt: true, force: true }));
+  $('#v-pitch').addEventListener('change', () => say(PHRASES.test(), { interrupt: true, force: true }));
+  $('#v-test').addEventListener('click', () => say(PHRASES.test(), { interrupt: true, force: true }));
   const stamp = store.todayISO();
   $('#d-json').addEventListener('click', () => { download(`fit-mit-herz-sicherung-${stamp}.json`, store.exportJSON()); toast('Sicherung gespeichert (Ordner „Downloads“).'); });
   $('#d-csvw').addEventListener('click', () => download(`fit-mit-herz-gewicht-${stamp}.csv`, store.exportWeightsCSV(), 'text/csv;charset=utf-8'));

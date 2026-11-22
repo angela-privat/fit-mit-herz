@@ -21,7 +21,7 @@ export function defaultState() {
     },
     onboarded: false,
     health: { answers: {}, needsDoctor: false, acknowledged: false, date: null },
-    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto' },
+    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto', voiceName: '', voiceRate: 1.0, voicePitch: 1.1, voiceCues: true },
     plan: { start: null, stage: 1, stageSince: null, lastSuggest: null },
     weights: [], // {date, kg, waist?, note?}
     sessions: [], // {id, date, day, kind, title, plannedSec, doneSec, completed, done:[ids], kcal, feedback, stage, stop}
