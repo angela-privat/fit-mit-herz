@@ -172,8 +172,9 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     P.sideSwitched = false;
     P.saidHalf = false;
     P.saidTen = false;
+    const afterCountdown = P.saidCount;
     P.saidCount = false;
-    P.nextCoach = 16;
+    P.nextCoach = 18;
     P.lastBeep = null;
     const ex0 = EXERCISES[s.id];
     if (phase === 'ready') {
@@ -182,9 +183,13 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
       beep(990, 0.18); vibrate(120);
       const prev = P.w.steps[P.i - 1];
       const calm = isCalm(ex0);
-      if (P.w.kind === 'day' && prev && prev.section !== s.section) { say(PHRASES.section(s.section)); sayMore(PHRASES.start(ex0.n, calm)); }
-      else say(PHRASES.start(ex0.n, calm));
-      if (store.get().settings.voiceCues !== false) sayMore(ex0.pos);
+      // Alles in EINER Ansage – das klingt flüssiger als mehrere Teile hintereinander
+      const parts = [];
+      if (P.w.kind === 'day' && prev && prev.section !== s.section) parts.push(PHRASES.section(s.section));
+      parts.push(PHRASES.start(ex0.n, calm));
+      if (store.get().settings.voiceCues !== false) parts.push(ex0.pos);
+      // nach dem Countdown nicht abschneiden, sondern anschließen
+      if (afterCountdown) sayMore(parts.join(' ')); else say(parts.join(' '));
     } else if (phase === 'rest' && nextStep()) {
       beep(520, 0.15);
       say(PHRASES.rest(EXERCISES[nextStep().id].n));

@@ -21,7 +21,7 @@ export function defaultState() {
     },
     onboarded: false,
     health: { answers: {}, needsDoctor: false, acknowledged: false, date: null },
-    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto', voiceName: '', voiceRate: 1.1, voicePitch: 0.95, voiceCues: true, voiceStyle: 2 },
+    settings: { sound: true, voice: true, vibrate: true, easyDefault: false, theme: 'auto', voiceName: '', voiceRate: 1.0, voicePitch: 1.0, voiceCues: true, voiceStyle: 3 },
     plan: { start: null, stage: 1, stageSince: null, lastSuggest: null },
     weights: [], // {date, kg, waist?, note?}
     sessions: [], // {id, date, day, kind, title, plannedSec, doneSec, completed, done:[ids], kcal, feedback, stage, stop}
@@ -91,11 +91,13 @@ export async function load() {
     try { data = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { data = null; }
   }
   state = merge(defaultState(), data);
-  // Trainer-Stimme (Version 2): alte Standardwerte auf die neuen, bestimmteren Werte umstellen
+  // Stimme (Version 3): alte Standardwerte auf die neuen Werte umstellen
   const vs = state.settings;
-  if (vs.voiceStyle !== 2) {
-    if ((vs.voiceRate ?? 1) === 1 && (vs.voicePitch ?? 1.1) === 1.1) { vs.voiceRate = 1.1; vs.voicePitch = 0.95; }
-    vs.voiceStyle = 2;
+  if (vs.voiceStyle !== 3) {
+    // frühere Standardwerte → ruhigeres, flüssigeres Sprechen (nur wenn nicht selbst verändert)
+    const r = vs.voiceRate ?? 1, pt = vs.voicePitch ?? 1.1;
+    if ((r === 1 && pt === 1.1) || (r === 1.1 && pt === 0.95)) { vs.voiceRate = 1.0; vs.voicePitch = 1.0; }
+    vs.voiceStyle = 3;
   }
   // Browser bitten, die Daten nicht automatisch zu löschen
   try { if (navigator.storage?.persist) await navigator.storage.persist(); } catch { /* egal */ }
