@@ -38,14 +38,14 @@ function hydrateFigures(root = view()) {
   root.querySelectorAll('[data-fig]').forEach((el) => {
     const ex = EXERCISES[el.dataset.fig];
     if (!ex || el.firstChild) return;
-    const fig = createFigure(ex.k, { animate: el.hasAttribute('data-anim'), tempo: ex.tp, label: ex.n });
+    const fig = createFigure(ex.k, { animate: el.hasAttribute('data-anim'), tempo: ex.tp, label: ex.n, loop: ex.loop, zoom: ex.zoom, highlight: ex.highlight });
     el.appendChild(fig.svg);
   });
   root.querySelectorAll('[data-figp]').forEach((el) => {
     const ex = EXERCISES[el.dataset.figp];
     if (!ex || el.firstChild) return;
-    const pose = el.dataset.pose;
-    el.appendChild(createFigure(ex.k, { pose, label: `${ex.n} – ${pose === 'start' ? 'Start' : 'Ziel'}` }).svg);
+    const pose = /^\d+$/.test(el.dataset.pose) ? +el.dataset.pose : el.dataset.pose;
+    el.appendChild(createFigure(ex.k, { pose, zoom: ex.zoom, highlight: ex.highlight, label: `${ex.n} – ${pose === 'start' ? 'Start' : pose === 'end' ? 'Ziel' : 'Bild ' + (pose + 1)}` }).svg);
   });
 }
 
@@ -395,11 +395,14 @@ function renderExercise(id) {
     <a class="backlink" href="javascript:history.back()">${ICON.back} Zurück</a>
     <section class="card ex-detail">
       <div class="ex-fig" data-fig="${e.id}" data-anim></div>
-      <div class="startziel">
+      ${e.loop ? `<div class="steps4">${e.k.slice(0, -1).map((_, i) => `<figure><figcaption>${i + 1}</figcaption><div data-figp="${e.id}" data-pose="${i}"></div></figure>`).join('')}</div>
+        <p class="muted small center">Die Bilder 1 → 2 → 3 → 4 laufen im Kreis immer wieder durch.</p>`
+      : `<div class="startziel">
         <figure><figcaption>1 · Start</figcaption><div data-figp="${e.id}" data-pose="start"></div></figure>
         <span class="sz-arrow" aria-hidden="true">➜</span>
         <figure><figcaption>2 · Ziel</figcaption><div data-figp="${e.id}" data-pose="end"></div></figure>
-      </div>
+      </div>`}
+      ${e.tip ? `<p class="funtip">${esc(e.tip)}</p>` : ''}
       <h1>${esc(e.n)}</h1>
       <div class="chips">${e.cat.map((c) => `<span class="chip static">${CATEGORIES[c]}</span>`).join('')}<span class="chip static lvl lvl${e.lvl}">Schwierigkeit: ${levelName(e.lvl)}</span></div>
       <p class="dose">${ICON.clock} ${esc(doseText(e, st.plan.stage))}${e.sided ? ' (Seite wechseln)' : ''}</p>

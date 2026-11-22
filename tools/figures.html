@@ -18,7 +18,7 @@ for (const e of EXERCISE_LIST) {
   c.innerHTML = `<b>${e.id}</b>`;
   const f = document.createElement('div'); f.className = 'f';
   f.appendChild(createFigure(e.k, { pose: 'start' }).svg);
-  f.appendChild(createFigure(e.k).svg);
+  f.appendChild(createFigure(e.k, { loop: e.loop }).svg);
   c.appendChild(f); g.appendChild(c);
 }
 </script></body></html>

@@ -83,6 +83,7 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
         <div class="pl-fig"></div>
         <h2 class="pl-name"></h2>
         <div class="pl-dose"></div>
+        <div class="pl-tip" hidden></div>
         <div class="pl-side" hidden></div>
         <div class="pl-easy" hidden></div>
         <div class="pl-timer" aria-live="off"></div>
@@ -112,12 +113,15 @@ export function startWorkout(workout, { onDone, meta = {}, startIndex = 0 } = {}
     if (P.figId !== se.id) {
       const box = root.querySelector('.pl-fig');
       box.innerHTML = '';
-      P.fig = createFigure(se.k, { animate: true, tempo: se.tp, label: se.n });
+      P.fig = createFigure(se.k, { animate: true, tempo: se.tp, label: se.n, loop: se.loop, zoom: se.zoom, highlight: se.highlight });
       box.appendChild(P.fig.svg);
       P.figId = se.id;
     }
     P.fig.setPaused(!P.running);
     root.querySelector('.pl-name').textContent = se.n;
+    const tipEl = root.querySelector('.pl-tip');
+    tipEl.hidden = !se.tip;
+    tipEl.textContent = se.tip || '';
     root.querySelector('.pl-dose').textContent = P.phase === 'rest' ? doseText(se, st.plan.stage) : doseText(e, st.plan.stage);
     const phaseEl = root.querySelector('.pl-phase');
     phaseEl.className = 'pl-phase ' + P.phase;

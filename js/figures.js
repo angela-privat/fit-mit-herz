@@ -110,7 +110,7 @@ function buildBody(g, front) {
     parts['ua' + i] = L('f-skin f-ua' + f);
     parts['sl' + i] = L('f-shirt f-sleeve' + f);
     parts['fa' + i] = L('f-skin f-fa' + f);
-    parts['hd' + i] = C('f-skinfill' + f, 4.6);
+    parts['hd' + i] = C('f-skinfill f-hand' + f, 4.6);
   };
   const leg = (i, far) => {
     const f = far ? ' far' : '';
@@ -205,20 +205,44 @@ function drawArrow(svg, frames, id) {
   el('path', { class: 'f-arrow', d: `M${r1(A2[0])} ${r1(A2[1])} Q${r1(ctrl[0])} ${r1(ctrl[1])} ${r1(B2[0])} ${r1(B2[1])}`, 'marker-end': `url(#${id})` }, svg);
 }
 
+/** Kreisspur: zeigt bei Kreisbewegungen den Weg des sich am meisten bewegenden Körperteils. */
+function drawLoopTrail(svg, frames, id) {
+  const keys = ['E1', 'W1', 'K1', 'T1', 'head', 'hip'];
+  const steps = [];
+  for (let i = 0; i < frames.length - 1; i++) {
+    for (let j = 0; j < 10; j++) steps.push(solve(lerpPose({ ...DEF, ...frames[i] }, { ...DEF, ...frames[i + 1] }, j / 10)));
+  }
+  let best = keys[0], bl = 0;
+  for (const k of keys) {
+    let l = 0;
+    for (let i = 1; i < steps.length; i++) l += Math.hypot(steps[i][k][0] - steps[i - 1][k][0], steps[i][k][1] - steps[i - 1][k][1]);
+    if (l > bl) { bl = l; best = k; }
+  }
+  // etwas Abstand nach außen, damit die Spur nicht auf dem Arm liegt; Ende offen lassen für den Pfeil
+  const pts = steps.slice(0, Math.floor(steps.length * 0.88)).map((s) => {
+    const c = s.S1, p = s[best], dx = p[0] - c[0], dy = p[1] - c[1], l = Math.hypot(dx, dy) || 1;
+    return [p[0] + dx / l * 5, p[1] + dy / l * 5];
+  });
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${r1(p[0])} ${r1(p[1])}`).join(' ');
+  el('path', { class: 'f-arrow f-loop', d, 'marker-end': `url(#${id})` }, svg);
+}
+
 /**
  * Erstellt eine Figur. frames: Liste von Posen (Ping-Pong-Animation).
  * opts: { animate, tempo, label, pose: 'start'|'end' (für Standbilder), arrow: true, ghost: true }
  */
 export function createFigure(frames, opts = {}) {
   const id = 'ah' + (++uid);
-  const svg = el('svg', { viewBox: '0 0 240 210', class: 'figure', role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
+  const vb = opts.zoom ? opts.zoom.join(' ') : '0 0 240 210';
+  const svg = el('svg', { viewBox: vb, class: 'figure' + (opts.zoom ? ' zoomed' : '') + (opts.highlight ? ' hl-' + opts.highlight : ''), role: 'img', 'aria-label': opts.label || 'Übungsfigur' });
   const defs = el('defs', {}, svg);
   const mk = el('marker', { id, viewBox: '0 0 10 10', refX: 6, refY: 5, markerWidth: 3.4, markerHeight: 3.4, orient: 'auto-start-reverse' }, defs);
   el('path', { d: 'M0 0 L10 5 L0 10 Z', class: 'f-arrowhead' }, mk);
   drawProps(svg, frames[0]);
   const front = solve(frames[0]).front;
   const multi = frames.length > 1;
-  const showGhost = multi && opts.ghost !== false && !opts.pose;
+  const still = opts.pose !== undefined; // Standbild (Start, Ziel oder Bild Nr. x)
+  const showGhost = multi && opts.ghost !== false && !still && !opts.loop;
   const last = frames[frames.length - 1];
 
   if (showGhost) {
@@ -228,11 +252,11 @@ export function createFigure(frames, opts = {}) {
   }
   const g = el('g', { class: 'fig-body' }, svg);
   const parts = buildBody(g, front);
-  if (multi && opts.arrow !== false && !opts.pose) drawArrow(svg, frames, id);
+  if (multi && opts.arrow !== false && !still) (opts.loop ? drawLoopTrail : drawArrow)(svg, frames, id);
 
   const render = (pose) => renderBody(parts, solve(pose));
   const fig = {
-    svg, frames, tempo: (opts.tempo || 4) * 1.25, paused: false, t0: performance.now(), pausedAt: 0,
+    svg, frames, loop: !!opts.loop, tempo: (opts.tempo || 4) * 1.25, paused: false, t0: performance.now(), pausedAt: 0,
     render,
     setPaused(v) {
       if (v === fig.paused) return;
@@ -241,7 +265,7 @@ export function createFigure(frames, opts = {}) {
       fig.paused = v;
     },
   };
-  render(opts.pose === 'start' ? frames[0] : last);
+  render(typeof opts.pose === 'number' ? frames[Math.min(opts.pose, frames.length - 1)] : opts.pose === 'start' ? frames[0] : last);
   if (opts.animate && multi) register(fig);
   return fig;
 }
@@ -265,7 +289,13 @@ function lerpPose(a, b, u) {
 function poseAt(fig, now) {
   const fr = fig.frames;
   const n = fr.length - 1;
-  const cyc = ((now - fig.t0) / 1000 / fig.tempo) % 1; // 0..1 hin und zurück
+  const cyc = ((now - fig.t0) / 1000 / fig.tempo) % 1;
+  if (fig.loop) {
+    // Kreisbewegung: läuft immer in dieselbe Richtung weiter (letztes Bild = erstes Bild)
+    const pos = cyc * n, i = Math.min(n - 1, Math.floor(pos));
+    return lerpPose({ ...DEF, ...fr[i] }, { ...DEF, ...fr[i + 1] }, pos - i);
+  }
+  // sonst hin und zurück
   let x = cyc < 0.5 ? cyc * 2 : 2 - cyc * 2; // 0..1..0
   // kurze Haltepausen an Start und Ziel
   x = Math.min(1, Math.max(0, (x - 0.12) / 0.76));

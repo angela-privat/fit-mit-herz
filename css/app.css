@@ -435,3 +435,14 @@ body.playing { overflow: hidden; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 :focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+.steps4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+.steps4 figure { margin: 0; background: var(--bg2); border-radius: 12px; padding: 3px; text-align: center; }
+.steps4 figcaption { font-weight: 800; color: var(--coral-d); font-size: .9rem; }
+.steps4 svg { width: 100%; height: auto; display: block; }
+.funtip { background: var(--sun-l); border-radius: 14px; padding: 12px 14px; margin: 12px 0 4px; font-size: .98rem; }
+.pl-tip { margin-top: 6px; background: var(--sun-l); border-radius: 12px; padding: 8px 12px; font-size: .9rem; max-width: 520px; }
+.hl-arm .fig-body .f-ua:not(.far), .hl-arm .fig-body .f-fa:not(.far), .hl-arm .fig-body .f-sleeve:not(.far), .hl-arm .fig-body .f-hand:not(.far) {
+  filter: drop-shadow(0 0 1.2px #fff) drop-shadow(0 0 2.4px var(--arrow));
+}
+.figure.zoomed { overflow: hidden; }

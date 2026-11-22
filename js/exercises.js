@@ -48,7 +48,10 @@ const list = [
     err: ['Schultern zu den Ohren hochziehen', 'Zu schnell kreisen'],
     mus: 'Schultergelenk, oberer Rücken, Brust',
     easy: 'Kleinere Kreise machen oder die Arme locker hängen lassen und nur die Schultern kreisen.',
-    k: [P(ST, { a1: 90, f1: 270, a2: 90, f2: 270 }), P(ST, { a1: 180, f1: 0, a2: 180, f2: 0 }), P(ST, { a1: 270, f1: 90, a2: 270, f2: 90 })],
+    // Kreis: Ellbogen vorn → oben → hinten → unten → vorn. Fingerspitzen bleiben auf der Schulter (Unterarm zeigt zur Schulter).
+    loop: true, zoom: [52, 4, 136, 118], highlight: 'arm',
+    tip: 'Stell dir vor, du bist ein sehr elegantes Huhn 🐔: Fingerspitzen auf die Schultern, und deine „Flügel“ malen große, langsame Kreise in die Luft – vorne hoch, hinten runter.',
+    k: [0, 1, 2, 3, 4].map((i) => { const a = 60 + i * 90; return P(ST, { a1: a, f1: a + 180, a2: a, f2: a + 180 }); }),
   },
   {
     id: 'hueftkreise', n: 'Hüftkreisen', cat: ['warm', 'hip'], lvl: 1, met: 2.5, tp: 3,
